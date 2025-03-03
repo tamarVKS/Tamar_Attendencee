@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "650378430699",
+    "project_id": "tamarattendence-e95d8",
+    "storage_bucket": "tamarattendence-e95d8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:650378430699:android:50cc9a0f4eebefc7b156ae",
+        "android_client_info": {
+          "package_name": "com.example.tamar_attendence"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB5f-9fq4tqfPKjrS8r8qPS4Cxb-mh60Lw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,2 @@
+E:/Tamar_Attendence/android/app/.cxx/RelWithDebInfo/4n105eh6/x86/CMakeFiles/edit_cache.dir
+E:/Tamar_Attendence/android/app/.cxx/RelWithDebInfo/4n105eh6/x86/CMakeFiles/rebuild_cache.dir
