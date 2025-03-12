@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 
 
-class EmployeeScreen extends StatelessWidget {
+class EmployeeScreens extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(

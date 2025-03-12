@@ -199,7 +199,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         TextButton(
                           child: Text("Login"),
                           onPressed: () {
-                            Navigator.pushNamed(context, 'login_screen');
+                            Navigator.pushNamed(context, '/login_screen');
                           },
                         ),
                       ],

@@ -73,90 +73,92 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset("assets/tamar.png", width: 200, height: 200),
-                Text("Welcome Back!", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[900])),
-                const SizedBox(height: 10),
-                Text("Login to continue", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
-                const SizedBox(height: 30),
-
-                TextField(
-                  controller: emailController,
-                  decoration: InputDecoration(
-                    labelText: "Email",
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                TextField(
-                  controller: passwordController,
-                  obscureText: !isPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    prefixIcon: Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () {
-                        setState(() {
-                          isPasswordVisible = !isPasswordVisible;
-                        });
-                      },
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset("assets/tamar.png", width: 200, height: 200),
+                  Text("Welcome Back!", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[900])),
+                  const SizedBox(height: 10),
+                  Text("Login to continue", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+                  const SizedBox(height: 30),
+              
+                  TextField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      labelText: "Email",
+                      prefixIcon: Icon(Icons.email),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    filled: true,
-                    fillColor: Colors.white,
                   ),
-                ),
-                const SizedBox(height: 10),
-
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context,'forgot_password');
-                    },
-                    child: Text("Forgot Password?", style: TextStyle(color: Colors.blueAccent[700])),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white)),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                SingleChildScrollView(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Don't have an account?", style: TextStyle(color: Colors.grey[700])),
-                      TextButton(
+                  const SizedBox(height: 20),
+              
+                  TextField(
+                    controller: passwordController,
+                    obscureText: !isPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: "Password",
+                      prefixIcon: Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
                         onPressed: () {
-                          Navigator.pushNamed(context,'signup_page');
+                          setState(() {
+                            isPasswordVisible = !isPasswordVisible;
+                          });
                         },
-                        child: Text("Sign Up", style: TextStyle(color: Colors.blueAccent[700])),
                       ),
-                    ],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+              
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context,'/forget_password');
+                      },
+                      child: Text("Forgot Password?", style: TextStyle(color: Colors.blueAccent[700])),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+              
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+              
+                  SingleChildScrollView(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Don't have an account?", style: TextStyle(color: Colors.grey[700])),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context,'/signup_page');
+                          },
+                          child: Text("Sign Up", style: TextStyle(color: Colors.blueAccent[700])),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

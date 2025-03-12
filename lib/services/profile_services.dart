@@ -1,33 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:tamar_attendence/models/profiledetails.dart';
 
-const String userCollection = 'ProfileInformation';
+const String personInformation = 'ProfileInformation';
+ class DatabaseService{
+   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+   late final CollectionReference<ProfileDetails> _collectionReference;
 
-class DatabaseService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  late final CollectionReference<ProfileDetails> _usersCollection;
+   DatabaseService(){
+     _collectionReference = _firestore.collection(personInformation).withConverter<ProfileDetails>(
+       fromFirestore: (snapshot, _) => ProfileDetails.fromJson(snapshot.data()!),
+       toFirestore: (ProfileDetails, _) => ProfileDetails.toJson(),
+     );
 
-  DatabaseService() {
-    _usersCollection = _firestore.collection(userCollection).withConverter<ProfileDetails>(
-      fromFirestore: (snapshot, _) => ProfileDetails.fromJson(snapshot.data()!),
-      toFirestore: (employee, _) => employee.toJson(),
-    );
-  }
+   }
 
-  Stream<List<ProfileDetails>> getEmployees() {
-    return _usersCollection.snapshots().map((snapshot) =>
-        snapshot.docs.map((doc) => doc.data()).toList());
-  }
+   Stream<QuerySnapshot<ProfileDetails>> getName(){
+     return _collectionReference.snapshots();
+   }
 
-  Future<void> addEmployee(ProfileDetails employee) async {
-    await _usersCollection.add(employee);
-  }
+   Future<void> addData(ProfileDetails profileDetails) async{
+     await _collectionReference.add(profileDetails);
+   }
 
-  Future<ProfileDetails?> getEmployeeByEmail(String email) async {
-    var querySnapshot = await _usersCollection.where('email', isEqualTo: email).get();
-    if (querySnapshot.docs.isNotEmpty) {
-      return querySnapshot.docs.first.data();
-    }
-    return null;
-  }
-}
+
+
+ }

@@ -19,7 +19,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           },
         ),
         title: Text('Notifications'),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.blueAccent,
       ),
       body: ListView.builder(
         itemCount: 4, // Replace with the actual number of notifications
@@ -61,7 +61,7 @@ class NotificationCard extends StatelessWidget {
     return Card(
       color: isSelected ? Colors.grey[200] : Colors.white,
       child: ListTile(
-        leading: Icon(Icons.notifications, color: Colors.red),
+        leading: Icon(Icons.notifications, color: Colors.blueAccent),
         title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
