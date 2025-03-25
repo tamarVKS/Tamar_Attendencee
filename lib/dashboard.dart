@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tamar_attendence/adminpages/admin.dart';
-import 'package:tamar_attendence/adminpages/modal_employee_details.dart';
-import 'package:tamar_attendence/employees_details.dart';
 import 'package:tamar_attendence/profile.dart';
 import 'package:tamar_attendence/report_attendance.dart';
 import 'attendance_history.dart';

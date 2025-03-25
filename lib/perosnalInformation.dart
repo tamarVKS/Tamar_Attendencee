@@ -18,6 +18,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   File? _profileImage;
   String? _profileImageUrl;
   bool _isSaving = false;
+  bool _isAdmin = false; // 🔥 Admin permission flag
 
   late Future<void> _loadDataFuture;
   final Map<String, TextEditingController> controllers = {};
@@ -28,11 +29,20 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     _loadDataFuture = _loadUserData();
   }
 
-  /// ✅ Load User Data from Firestore
+  /// ✅ Load User Data and Check Admin Permission
   Future<void> _loadUserData() async {
     _user = _auth.currentUser;
 
     if (_user != null) {
+      // 🔥 Check if the user is an admin
+      final adminDoc = await FirebaseFirestore.instance
+          .collection('Admins') // Ensure you have an "Admins" collection
+          .doc(_user!.uid)
+          .get();
+
+      _isAdmin = adminDoc.exists; // Admin if document exists
+
+      // 🔥 Load user profile information
       final docSnapshot = await FirebaseFirestore.instance
           .collection('ProfileInformation')
           .doc(_user!.uid)
@@ -51,11 +61,11 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
         controllers['Department'] = TextEditingController(text: data?['department'] ?? '');
         controllers['Joining Date'] = TextEditingController(text: data?['joiningDate'] ?? '');
         controllers['Position'] = TextEditingController(text: data?['position'] ?? '');
-        controllers['Education'] = TextEditingController(text: data?['education'] ?? '');
+        controllers['Employment Type'] = TextEditingController(text: data?['Employment Type'] ?? '');
       } else {
         for (var key in [
           'Name', 'Employee ID', 'Email', 'Phone', 'Date of Birth',
-          'Address', 'Department', 'Joining Date', 'Position', 'Education'
+          'Address', 'Department', 'Joining Date', 'Position', 'Employment Type'
         ]) {
           controllers[key] = TextEditingController();
         }
@@ -63,8 +73,10 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     }
   }
 
-  /// ✅ Pick and Upload Image
+  /// ✅ Pick and Upload Image (Admin Only)
   Future<void> _pickImage() async {
+    if (!_isAdmin) return;  // Prevent non-admins from picking an image
+
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
@@ -72,25 +84,22 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
         _profileImage = File(pickedFile.path);
       });
 
-      await _uploadImage(); // Ensure the image is uploaded immediately
+      await _uploadImage();
     }
   }
 
-  /// ✅ Upload Image and Save URL
+  /// ✅ Upload Image and Save URL (Admin Only)
   Future<void> _uploadImage() async {
-    if (_user != null && _profileImage != null) {
+    if (_user != null && _profileImage != null && _isAdmin) {
       String filePath = 'profile_images/${_user!.uid}.jpg';
 
       try {
-        // Upload the image to Firebase Storage
         TaskSnapshot uploadTask = await FirebaseStorage.instance
             .ref(filePath)
             .putFile(_profileImage!);
 
-        // Get the download URL
         String downloadUrl = await uploadTask.ref.getDownloadURL();
 
-        // Save image URL to Firestore
         setState(() {
           _profileImageUrl = downloadUrl;
         });
@@ -106,41 +115,39 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     }
   }
 
-  /// ✅ Save User Data with Image Upload Completion
+  /// ✅ Save User Data (Admin Only)
   Future<void> _saveUserData() async {
-    if (_user != null) {
-      setState(() => _isSaving = true);
+    if (!_isAdmin || _user == null) return;
 
-      // 🔥 Ensure the image upload is completed before saving
-      if (_profileImage != null) {
-        await _uploadImage();
-      }
+    setState(() => _isSaving = true);
 
-      final Map<String, dynamic> userData = {
-        'name': controllers['Name']?.text ?? '',
-        'EmployeeID': controllers['Employee ID']?.text ?? '',
-        'email': controllers['Email']?.text ?? '',
-        'phone': controllers['Phone']?.text ?? '',
-        'dateofbirth': controllers['Date of Birth']?.text ?? '',
-        'address': controllers['Address']?.text ?? '',
-        'department': controllers['Department']?.text ?? '',
-        'joiningDate': controllers['Joining Date']?.text ?? '',
-        'position': controllers['Position']?.text ?? '',
-        'education': controllers['Education']?.text ?? '',
-        'profileImage': _profileImageUrl ?? ''
-      };
-
-      await FirebaseFirestore.instance
-          .collection('ProfileInformation')
-          .doc(_user!.uid)
-          .set(userData, SetOptions(merge: true));
-
-      setState(() => _isSaving = false);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Profile updated successfully!")),
-      );
+    if (_profileImage != null) {
+      await _uploadImage();
     }
+
+    final Map<String, dynamic> userData = {
+      'name': controllers['Name']?.text ?? '',
+      'EmployeeID': controllers['Employee ID']?.text ?? '',
+      'email': controllers['Email']?.text ?? '',
+      'phone': controllers['Phone']?.text ?? '',
+      'dateofbirth': controllers['Date of Birth']?.text ?? '',
+      'address': controllers['Address']?.text ?? '',
+      'department': controllers['Department']?.text ?? '',
+      'joiningDate': controllers['Joining Date']?.text ?? '',
+      'position': controllers['Position']?.text ?? '',
+      'profileImage': _profileImageUrl ?? ''
+    };
+
+    await FirebaseFirestore.instance
+        .collection('ProfileInformation')
+        .doc(_user!.uid)
+        .set(userData, SetOptions(merge: true));
+
+    setState(() => _isSaving = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Profile updated successfully!")),
+    );
   }
 
   @override
@@ -174,31 +181,33 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                           ? NetworkImage(_profileImageUrl!)
                           : AssetImage('assets/new.png') as ImageProvider,
                     ),
-                    GestureDetector(
-                      onTap: _pickImage,
-                      child: CircleAvatar(
-                        radius: 20,
-                        backgroundColor: Colors.blue,
-                        child: Icon(Icons.camera_alt, color: Colors.white),
+                    if (_isAdmin)  // 🔥 Show camera icon only for admins
+                      GestureDetector(
+                        onTap: _pickImage,
+                        child: CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Colors.blue,
+                          child: Icon(Icons.camera_alt, color: Colors.white),
+                        ),
                       ),
-                    ),
                   ],
                 ),
                 SizedBox(height: 20),
-                ...controllers.entries.map((entry) => _buildModernTile(entry.key, entry.value)).toList(),
+                ...controllers.entries.map((entry) => _buildTile(entry.key, entry.value)).toList(),
                 SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: _isSaving ? null : _saveUserData,
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 40),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    backgroundColor: Colors.blueAccent,
-                    elevation: 5,
+                if (_isAdmin)  // 🔥 Save button only for admins
+                  ElevatedButton(
+                    onPressed: _isSaving ? null : _saveUserData,
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 40),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      backgroundColor: Colors.blueAccent,
+                      elevation: 5,
+                    ),
+                    child: _isSaving
+                        ? CircularProgressIndicator(color: Colors.white)
+                        : Text('Save', style: TextStyle(fontSize: 18)),
                   ),
-                  child: _isSaving
-                      ? CircularProgressIndicator(color: Colors.white)
-                      : Text('Save', style: TextStyle(fontSize: 18)),
-                ),
               ],
             ),
           );
@@ -207,7 +216,8 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     );
   }
 
-  Widget _buildModernTile(String title, TextEditingController controller) {
+  /// ✅ Build Profile Tiles (Disabled for non-admins)
+  Widget _buildTile(String title, TextEditingController controller) {
     return Card(
       elevation: 2,
       margin: EdgeInsets.symmetric(vertical: 8),
@@ -216,6 +226,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: TextField(
           controller: controller,
+          enabled: _isAdmin, // 🔥 Disable editing for non-admins
           decoration: InputDecoration(
             labelText: title,
             labelStyle: TextStyle(fontSize: 16, color: Colors.black87),

@@ -28,35 +28,67 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print("Firebase Initialized Successfully");
+    print("✅ Firebase Initialized Successfully");
   } catch (e) {
-    print("Firebase Initialization Failed: $e");
+    print("❌ Firebase Initialization Failed: $e");
   }
 
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    initialRoute: '/login_screen'
-     ,
-    routes: {
-      '/splash': (context) => Splashscreen(),
-      '/login_screen': (context) => LoginScreen(),
-      '/SignIn': (context) => SignInPage(),
-      '/signup_page': (context) => SignUpPage(),
-      '/dashboard': (context) => DashboardScreen(),
-      '/clockinout': (context) => LiveAttendanceScreen(employeeName: 'John Doe'),
-      '/profile': (context) => ProfilePage(),
-      '/attendance_history': (context) => AttendanceHistoryScreen(),
-      '/report_attendance': (context) => ReportAttendanceScreen(),
-      '/leave_page': (context) => LeaveManagementScreen(),
-      '/notification_page': (context) => NotificationsScreen(),
-      '/personalInformation': (context) => PersonalInformationScreen(),
-      '/changePassword': (context) => ChangePasswordScreen(),
-      '/forget_password': (context) => ForgotPasswordPage(),
-      '/employees_details': (context) => EmployeeScreens(),
-      //'/liveattendance': (context) => LiveAttendanceScreen(),
-      '/admin':(context)=>AdminPage(),
-      '/modal_employee_details': (context) => EmployeeScreen(),
-      '/modal_employee_form':(context) => EmployeeForm()
-    },
-  ));
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      initialRoute: '/login_screen',
+      onGenerateRoute: (settings) {
+        // Handle named routes with parameters
+        if (settings.name == '/clockinout') {
+          final args = settings.arguments as Map<String, dynamic>? ?? {};
+          return MaterialPageRoute(
+            builder: (context) => LiveAttendanceScreen(
+              employeeName: args['employeeName'] ?? 'Unknown',
+            ),
+          );
+        }
+
+        // Default named routes
+        switch (settings.name) {
+          case '/splash':
+            return MaterialPageRoute(builder: (context) => Splashscreen());
+          case '/login_screen':
+            return MaterialPageRoute(builder: (context) => LoginScreen());
+          case '/dashboard':
+            return MaterialPageRoute(builder: (context) => DashboardScreen());
+          case '/profile':
+            return MaterialPageRoute(builder: (context) => ProfilePage());
+          case '/attendance_history':
+            return MaterialPageRoute(builder: (context) => AttendanceHistoryScreen());
+          case '/report_attendance':
+            return MaterialPageRoute(builder: (context) => ReportAttendanceScreen());
+          case '/leave_page':
+            return MaterialPageRoute(builder: (context) => LeaveManagementScreen());
+          case '/notification_page':
+            return MaterialPageRoute(builder: (context) => NotificationsScreen());
+          case '/personalInformation':
+            return MaterialPageRoute(builder: (context) => PersonalInformationScreen());
+          case '/changePassword':
+            return MaterialPageRoute(builder: (context) => ChangePasswordScreen());
+          case '/forget_password':
+            return MaterialPageRoute(builder: (context) => ForgotPasswordPage());
+          case '/employees_details':
+            return MaterialPageRoute(builder: (context) => EmployeeScreens());
+          case '/admin':
+            return MaterialPageRoute(builder: (context) => AdminPage());
+          case '/modal_employee_details':
+            return MaterialPageRoute(builder: (context) => EmployeeScreen());
+          case '/modal_employee_form':
+            return MaterialPageRoute(builder: (context) => EmployeeForm());
+          default:
+            return MaterialPageRoute(builder: (context) => LoginScreen());
+        }
+      },
+    );
+  }
 }

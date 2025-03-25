@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tamar_attendence/dashboard.dart';
+import 'adminpages/admin.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,9 +14,15 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool isLoading = false;
-  bool isPasswordVisible = false; // Toggle password visibility
 
+  bool isLoading = false;
+  bool isPasswordVisible = false;
+
+  // ✅ Admin credentials
+  final String adminEmail = "pradeep@gmail.com";
+  final String adminPassword = "123456";
+
+  /// ✅ Login method with role-based navigation
   void login() async {
     if (emailController.text.trim().isEmpty || passwordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -24,21 +31,31 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login Successful")),
-      );
+      String email = emailController.text.trim();
+      String password = passwordController.text.trim();
 
-      // Navigate to home screen
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardScreen()));
+      // Check if the credentials match the admin
+      if (email == adminEmail && password == adminPassword) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Admin Login Successful")),
+        );
+
+        // Navigate to Admin Screen
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => AdminPage()));
+      } else {
+        // Proceed with Firebase authentication for regular users
+        await _auth.signInWithEmailAndPassword(email: email, password: password);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("User Login Successful")),
+        );
+
+        // Navigate to User Dashboard
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardScreen()));
+      }
     } on FirebaseAuthException catch (e) {
       String errorMessage = "Login failed";
 
@@ -59,11 +76,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     }
 
-    setState(() {
-      isLoading = false;
-    });
+    setState(() => isLoading = false);
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -78,29 +92,36 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Image.asset("assets/tamar.png", width: 200, height: 200),
-                  Text("Welcome Back!", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey[900])),
+                  Text("Welcome Back!",
+                      style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[900])),
                   const SizedBox(height: 10),
-                  Text("Login to continue", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+                  Text("Login to continue",
+                      style: TextStyle(fontSize: 16, color: Colors.grey[700])),
                   const SizedBox(height: 30),
-              
+
+                  // Email field
                   TextField(
                     controller: emailController,
                     decoration: InputDecoration(
                       labelText: "Email",
-                      prefixIcon: Icon(Icons.email),
+                      prefixIcon: const Icon(Icons.email),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       filled: true,
                       fillColor: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 20),
-              
+
+                  // Password field
                   TextField(
                     controller: passwordController,
                     obscureText: !isPasswordVisible,
                     decoration: InputDecoration(
                       labelText: "Password",
-                      prefixIcon: Icon(Icons.lock),
+                      prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
                         onPressed: () {
@@ -115,18 +136,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-              
+
+                  // Forgot password
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context,'/forget_password');
-                      },
-                      child: Text("Forgot Password?", style: TextStyle(color: Colors.blueAccent[700])),
+                      onPressed: () => Navigator.pushNamed(context, '/forget_password'),
+                      child: Text("Forgot Password?",
+                          style: TextStyle(color: Colors.blueAccent[700])),
                     ),
                   ),
                   const SizedBox(height: 20),
-              
+
+                  // Login button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -138,23 +160,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white)),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-              
-                  SingleChildScrollView(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Don't have an account?", style: TextStyle(color: Colors.grey[700])),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context,'/signup_page');
-                          },
-                          child: Text("Sign Up", style: TextStyle(color: Colors.blueAccent[700])),
-                        ),
-                      ],
+                          : const Text("Login",
+                          style: TextStyle(fontSize: 18, color: Colors.white)),
                     ),
                   ),
                 ],

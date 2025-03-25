@@ -1,39 +1,27 @@
-// create constructor
 class SignupDetails {
+  final String id;   // Add the id field
   final String Email;
-  final String id;
   final String password;
 
   SignupDetails({
+    required this.id,        // Include the id field
     required this.Email,
-    required this.id,
     required this.password,
   });
 
-  // Corrected fromJson constructor
- SignupDetails.fromJson(Map<String, Object?> json) : this(
-   Email: json['Email'] ! as String,
-   id: json['id'] ! as String,
-   password: json['password'] ! as String,
- );
-
-
-  SignupDetails copyWith({
-    String? Email,
-    String? id,
-    String? password,
-  }) {
-    return SignupDetails(
-      Email: Email ?? this.Email,
-      id: id ?? this.id,
-      password: password ?? this.password,
-    );
-  }
-  Map<String, Object?> toJson() {
+  Map<String, dynamic> toJson() {
     return {
+      'id': id,               // Include id in Firestore document
       'Email': Email,
-      'id': id,
       'password': password,
     };
+  }
+
+  factory SignupDetails.fromJson(Map<String, dynamic> json) {
+    return SignupDetails(
+      id: json['id'] ?? '',   // Assign a default empty string if missing
+      Email: json['Email'] ?? '',
+      password: json['password'] ?? '',
+    );
   }
 }

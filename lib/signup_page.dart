@@ -1,31 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:tamar_attendence/firebase_options.dart';
-import 'package:tamar_attendence/models/signupdetails.dart';
+import 'package:intl/intl.dart';
 
 const String userCollection = 'Employees';
-
-class DatabaseService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  late final CollectionReference _usersCollection;
-
-  DatabaseService() {
-    _usersCollection = _firestore.collection(userCollection).withConverter<SignupDetails>(
-      fromFirestore: (snapshot, _) => SignupDetails.fromJson(snapshot.data()!),
-      toFirestore: (user, _) => user.toJson(),
-    );
-  }
-
-  Stream<QuerySnapshot> getEmployees() {
-    return _usersCollection.snapshots();
-  }
-
-  Future<void> addEmployee(SignupDetails employee) async {
-    await _usersCollection.add(employee);
-  }
-}
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -33,51 +11,98 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _idController = TextEditingController();
+  final TextEditingController _designationController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
+  final TextEditingController _joiningDateController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-  final DatabaseService _databaseService = DatabaseService();
+
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
 
-  void _registerUser() async {
-    if (_passwordController.text != _confirmPasswordController.text) {
+  /// 🔥 Improved validation function
+  bool _validateInputs() {
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _designationController.text.isEmpty ||
+        _dobController.text.isEmpty ||
+        _joiningDateController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Passwords do not match!')),
+        const SnackBar(content: Text('Please fill all fields!')),
       );
-      return;
+      return false;
     }
 
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match!')),
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /// 🚀 Function to register the user
+  Future<void> _registerUser() async {
+    if (!_validateInputs()) return;
+
     try {
-      // 1️.Create User in Firebase Authentication
-      UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
+      // 1️⃣ Create User in Firebase Authentication
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // 2️. Get Firebase User ID
+      // 2️⃣ Get Firebase UID
       String uid = userCredential.user!.uid;
 
-      // 3️.Add User to Firestore
-      SignupDetails newUser = SignupDetails(
-        Email: _emailController.text.trim(),
-        id: uid, // Store Firebase UID instead of manually entered ID
-        password: _passwordController.text.trim(),
-      );
+      // 3️⃣ Save Additional User Data in Firestore
+      Map<String, dynamic> userData = {
+        'uid': uid,  // Use Firebase UID
+        'fullName': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'designation': _designationController.text.trim(),
+        'dateOfBirth': _dobController.text.trim(),
+        'joiningDate': _joiningDateController.text.trim(),
+        'createdAt': Timestamp.now(),  // Use Firestore Timestamp
+      };
 
-      await _databaseService.addEmployee(newUser);
+      await _firestore.collection(userCollection).doc(uid).set(userData);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('User Registered Successfully!')),
+        const SnackBar(content: Text('User Registered Successfully!')),
       );
-      Navigator.pushNamed(context, 'login_screen');
+
+      Navigator.pushNamed(context, '/login_screen');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
       print("❌ Error: $e");
+    }
+  }
+
+  /// 📅 Date picker with improved formatting
+  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1950),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() {
+        controller.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
     }
   }
 
@@ -98,53 +123,87 @@ class _SignUpPageState extends State<SignUpPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: MediaQuery
-                        .of(context)
-                        .size
-                        .height * 0.1), // Keeps content balanced
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.1),
                     Center(
                       child: Image.asset(
-                        'assets/tamar.png', // Replace with your logo asset path
+                        'assets/tamar.png', // Replace with your logo
                         height: 75,
                       ),
                     ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Sign Up in Attendity',
-                      style: TextStyle(
-                          fontSize: 32, fontWeight: FontWeight.bold),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Sign Up',
+                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(height: 8),
-                    Container(height: 2, width: 50, color: Colors.blueAccent),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
+
+                    // Name Field
+                    TextField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Email Field
                     TextField(
                       controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Employee Email',
-                        border: OutlineInputBorder(borderRadius: BorderRadius
-                            .circular(8.0)),
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        border: OutlineInputBorder(),
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
+
+                    // Designation Field
                     TextField(
-                      controller: _idController,
-                      decoration: InputDecoration(
-                        labelText: 'Employee ID',
-                        border: OutlineInputBorder(borderRadius: BorderRadius
-                            .circular(8.0)),
+                      controller: _designationController,
+                      decoration: const InputDecoration(
+                        labelText: 'Designation',
+                        border: OutlineInputBorder(),
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
+
+                    // Date of Birth Field
+                    TextField(
+                      controller: _dobController,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Date of Birth',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      onTap: () => _selectDate(context, _dobController),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Joining Date Field
+                    TextField(
+                      controller: _joiningDateController,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Joining Date',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      onTap: () => _selectDate(context, _joiningDateController),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Password Field
                     TextField(
                       controller: _passwordController,
                       obscureText: !_passwordVisible,
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        border: OutlineInputBorder(borderRadius: BorderRadius
-                            .circular(8.0)),
+                        border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
-                          icon: Icon(_passwordVisible ? Icons.visibility : Icons
-                              .visibility_off),
+                          icon: Icon(
+                            _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                          ),
                           onPressed: () {
                             setState(() {
                               _passwordVisible = !_passwordVisible;
@@ -153,56 +212,40 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
+
+                    // Confirm Password Field
                     TextField(
                       controller: _confirmPasswordController,
                       obscureText: !_confirmPasswordVisible,
                       decoration: InputDecoration(
                         labelText: 'Confirm Password',
-                        border: OutlineInputBorder(borderRadius: BorderRadius
-                            .circular(8.0)),
+                        border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
                           icon: Icon(
-                              _confirmPasswordVisible ? Icons.visibility : Icons
-                                  .visibility_off),
+                            _confirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                          ),
                           onPressed: () {
                             setState(() {
-                              _confirmPasswordVisible =
-                              !_confirmPasswordVisible;
+                              _confirmPasswordVisible = !_confirmPasswordVisible;
                             });
                           },
                         ),
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
+
+                    // Sign Up Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _registerUser,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueAccent,
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.0)),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: Text(
-                          'Sign Up',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
+                        child: const Text('Sign Up', style: TextStyle(fontSize: 16, color: Colors.white)),
                       ),
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Already have an account?"),
-                        TextButton(
-                          child: Text("Login"),
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/login_screen');
-                          },
-                        ),
-                      ],
                     ),
                   ],
                 ),

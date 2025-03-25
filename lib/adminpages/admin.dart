@@ -1,113 +1,147 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AdminPage extends StatelessWidget {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Admin Page'),
+        title: Text('Admin Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.blueAccent,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () => _showLogoutConfirmation(context),
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
+      body: Column(
+        children: [
+          // ✅ Header Section (Styled like Dashboard)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.blueAccent,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(25),
+                bottomRight: Radius.circular(25),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10,
+                  offset: Offset(0, 5),
+                ),
               ],
             ),
-            SizedBox(height: 20),
-            Text(
-              'Menu',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  '',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Manage employees and reports',
+                  style: TextStyle(fontSize: 16, color: Colors.white70),
+                ),
+              ],
             ),
-            SizedBox(height: 10),
-            Expanded(
+          ),
+          SizedBox(height: 20),
+
+          // ✅ Menu Grid (Styled like Dashboard Buttons)
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
               child: GridView.count(
                 crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
+                crossAxisSpacing: 15,
+                mainAxisSpacing: 15,
+                childAspectRatio: 1.0,
                 children: [
-                  MenuCard(icon: Icons.people, label: 'Employee'),
-                  MenuCard(icon: Icons.location_on, label: 'Office'),
-                  MenuCard(icon: Icons.assignment, label: 'Report Attendance'),
-                  MenuCard(icon: Icons.not_interested, label: 'Report leave'),
+                  _buildMenuCard('Employee', Icons.people, context),
+                  _buildMenuCard('Office', Icons.location_on, context),
+                  _buildMenuCard('Report Attendance', Icons.assignment, context),
+                  _buildMenuCard('Report Leave', Icons.not_interested, context),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}
 
-class InfoCard extends StatelessWidget {
-  final String title;
-  final int count;
-  final String showAllText;
-  final VoidCallback onShowAllPressed;
-
-  InfoCard({
-    required this.title,
-    required this.count,
-    required this.showAllText,
-    required this.onShowAllPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+  // ✅ Styled Menu Card
+  Widget _buildMenuCard(String label, IconData icon, BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(context, '/modal_employee_details');
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [Colors.blueAccent, Colors.lightBlueAccent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 5,
+              offset: Offset(3, 3),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.all(16),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(title),
+            Icon(icon, size: 40, color: Colors.white),
             SizedBox(height: 10),
             Text(
-              '$count',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            GestureDetector(
-              onTap: onShowAllPressed,
-              child: Text(
-                showAllText,
-                style: TextStyle(color: Colors.red, decoration: TextDecoration.underline),
-              ),
+              label,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class MenuCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  MenuCard({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(context, '/modal_employee_details');
-        },
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 50),
-              SizedBox(height: 10),
-              Text(label),
-            ],
+  // ✅ Logout Confirmation Dialog
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text('Confirm Logout'),
+        content: Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(), // Close dialog
+            child: Text('Cancel'),
           ),
-        ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop(); // Close dialog
+              await _auth.signOut();
+              Navigator.pushReplacementNamed(context, '/login'); // Navigate to login
+            },
+            child: Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }
