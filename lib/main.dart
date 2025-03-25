@@ -35,14 +35,15 @@ void main() async {
 
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
-    initialRoute: '/login_screen',
+    initialRoute: '/login_screen'
+     ,
     routes: {
       '/splash': (context) => Splashscreen(),
       '/login_screen': (context) => LoginScreen(),
       '/SignIn': (context) => SignInPage(),
       '/signup_page': (context) => SignUpPage(),
       '/dashboard': (context) => DashboardScreen(),
-      '/clockinout': (context) => LiveAttendanceScreen(),
+      '/clockinout': (context) => LiveAttendanceScreen(employeeName: 'John Doe'),
       '/profile': (context) => ProfilePage(),
       '/attendance_history': (context) => AttendanceHistoryScreen(),
       '/report_attendance': (context) => ReportAttendanceScreen(),
@@ -52,11 +53,10 @@ void main() async {
       '/changePassword': (context) => ChangePasswordScreen(),
       '/forget_password': (context) => ForgotPasswordPage(),
       '/employees_details': (context) => EmployeeScreens(),
-      '/liveattendance': (context) => LiveAttendanceScreen(),
+      //'/liveattendance': (context) => LiveAttendanceScreen(),
       '/admin':(context)=>AdminPage(),
       '/modal_employee_details': (context) => EmployeeScreen(),
       '/modal_employee_form':(context) => EmployeeForm()
-
     },
   ));
 }
