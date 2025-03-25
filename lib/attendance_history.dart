@@ -1,6 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
-import 'services/attendance_services.dart';
+import 'package:intl/intl.dart';
 
 class AttendanceHistoryScreen extends StatelessWidget {
   @override
@@ -12,26 +12,50 @@ class AttendanceHistoryScreen extends StatelessWidget {
         centerTitle: true,
         elevation: 4.0,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade100, Colors.blue.shade300],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: ListView.builder(
-          padding: EdgeInsets.all(12.0),
-          itemCount: 4, // Replace with actual number of records
-          itemBuilder: (context, index) {
-            return AttendanceCard(
-              date: 'Feb 28, 2025',
-              name: 'John Doe',
-              clockIn: '09:00 AM',
-              clockOut: '06:00 PM',
-            );
-          },
-        ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('attendance')
+            .orderBy('checkin', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(child: Text("No attendance history found."));
+          }
+
+          var attendanceDocs = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: EdgeInsets.all(12.0),
+            itemCount: attendanceDocs.length,
+            itemBuilder: (context, index) {
+              var data = attendanceDocs[index].data() as Map<String, dynamic>;
+
+              DateTime? checkInTime = (data['checkin'] as Timestamp).toDate();
+              DateTime? checkOutTime = data['checkout'] != null
+                  ? (data['checkout'] as Timestamp).toDate()
+                  : null;
+
+              String checkInLocation = data['checkin_location'] ?? 'Unknown';
+              String checkOutLocation = data['checkout_location'] ?? 'Not checked out';
+              String employeeName = data['employee_name'] ?? 'N/A';
+
+              return AttendanceCard(
+                date: DateFormat('yyyy-MM-dd').format(checkInTime),
+                name: employeeName,
+                clockIn: DateFormat('HH:mm:ss').format(checkInTime),
+                clockOut: checkOutTime != null
+                    ? DateFormat('HH:mm:ss').format(checkOutTime)
+                    : 'Not checked out',
+                checkInLocation: checkInLocation,
+                checkOutLocation: checkOutLocation,
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -42,12 +66,16 @@ class AttendanceCard extends StatelessWidget {
   final String name;
   final String clockIn;
   final String clockOut;
+  final String checkInLocation;
+  final String checkOutLocation;
 
   const AttendanceCard({
     required this.date,
     required this.name,
     required this.clockIn,
     required this.clockOut,
+    required this.checkInLocation,
+    required this.checkOutLocation,
   });
 
   @override
@@ -65,14 +93,18 @@ class AttendanceCard extends StatelessWidget {
           children: [
             Text(
               '$date - $name',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              style: TextStyle(fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87),
             ),
             SizedBox(height: 10.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildTimeEntry(Icons.login, 'CLOCK IN', clockIn, Colors.green),
-                _buildTimeEntry(Icons.logout, 'CLOCK OUT', clockOut, Colors.red),
+                _buildTimeEntry(Icons.login, 'CLOCK IN', clockIn, Colors.green,
+                    checkInLocation),
+                _buildTimeEntry(Icons.logout, 'CLOCK OUT', clockOut, Colors.red,
+                    checkOutLocation),
               ],
             ),
           ],
@@ -81,26 +113,36 @@ class AttendanceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTimeEntry(IconData icon, String label, String time, Color color) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: color, size: 20),
-            SizedBox(width: 6.0),
-            Text(
-              label,
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-        SizedBox(height: 4.0),
-        Text(
-          time,
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
-        ),
-      ],
+  Widget _buildTimeEntry(IconData icon, String label, String time, Color color,
+      String location) {
+    return Expanded( // Added Expanded widget to prevent overflow
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              SizedBox(width: 6.0),
+              Text(label, style: TextStyle(fontWeight: FontWeight.w500)),
+            ],
+          ),
+          SizedBox(height: 4.0),
+          Text(
+            time,
+            style: TextStyle(fontSize: 14,
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w500),
+          ),
+          Text(
+            location,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            overflow: TextOverflow.ellipsis,
+            // Added ellipsis for long location names
+            maxLines: 1, // Limit the number of lines
+          ),
+        ],
+      ),
     );
   }
-
 }
+

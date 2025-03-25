@@ -148,7 +148,8 @@ class DashboardContent extends StatelessWidget {
                 _buildButton('ATTENDANCE', Icons.access_time, context, ReportAttendanceScreen()),
                 _buildButton('Notification', Icons.notifications, context, NotificationsScreen()),
                 _buildButton('Leave', Icons.logout, context, LeaveManagementScreen()),
-                _buildButton('CheckIn/CheckOut', Icons.check_box, context, LiveAttendanceScreen()),
+                _buildButton('CheckIn/CheckOut', Icons.check_box, context, LiveAttendanceScreen(employeeName: 'John Doe')),
+
               ],
             ),
           ),
