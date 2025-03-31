@@ -7,7 +7,7 @@ import 'package:tamar_attendence/models/checkinout.dart';
 import 'package:tamar_attendence/services/clockinDatabase.dart';
 
 class LiveAttendanceScreen extends StatefulWidget {
-  final String employeeName;               // ✅ Added employeeName parameter
+  final String employeeName;
 
   const LiveAttendanceScreen({Key? key, required this.employeeName}) : super(key: key);
 
@@ -28,12 +28,12 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
   bool isLate = false;
 
   @override
-  void initState() {
-    super.initState();
-    _fetchLatestCheckInStatus();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchLatestCheckInStatus();  // ✅ Fetch latest status every time the screen is visited
   }
 
-  // ✅ Fetch Latest Check-In Status to display it properly on reload
+  // ✅ Fetch Latest Check-In Status
   Future<void> _fetchLatestCheckInStatus() async {
     var snapshot = await _databaseService.getCheckTime().first;
     if (snapshot.docs.isNotEmpty) {
@@ -43,7 +43,7 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
       CheckInOutDetails details = CheckInOutDetails.fromJson(data);
 
       setState(() {
-        isCheckedIn = details.checkout == null;
+        isCheckedIn = details.checkout == null;  // If checkout is null, still checked in
         checkInId = latestDoc.id;
         checkInTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(details.checkin.toDate());
         checkInLocation = details.location ?? "Unknown";
@@ -51,6 +51,16 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
             ? DateFormat('yyyy-MM-dd HH:mm:ss').format(details.checkout!.toDate())
             : null;
         checkOutLocation = details.checkoutLocation ?? "Unknown";
+      });
+    } else {
+      // No records: reset to default state
+      setState(() {
+        isCheckedIn = false;
+        checkInTime = null;
+        checkOutTime = null;
+        checkInLocation = null;
+        checkOutLocation = null;
+        checkInId = null;
       });
     }
   }
@@ -99,8 +109,7 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
     CheckInOutDetails checkInData = CheckInOutDetails(
       name: widget.employeeName,
       checkin: Timestamp.fromDate(now),
-      checkout: Timestamp.fromDate(now),  // Default checkout time
-      location: location,                 // Store check-in location
+      location: location,
     );
 
     await _databaseService.addCheckInOutData(checkInData).then((docRef) {
@@ -153,55 +162,14 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
     });
   }
 
-  // ✅ Build Attendance History Stream
-  Widget _buildAttendanceHistory() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _databaseService.getCheckTime(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text("No attendance history found."));
-        }
-
-        return Expanded(
-          child: ListView(
-            children: snapshot.data!.docs.map<Widget>((doc) {
-              var data = doc.data() as Map<String, dynamic>;
-              CheckInOutDetails details = CheckInOutDetails.fromJson(data);
-
-              DateTime? checkInTime = details.checkin.toDate();
-              DateTime? checkOutTime = details.checkout?.toDate();
-
-              return Card(
-                child: ListTile(
-                  title: Text("Date: ${DateFormat('yyyy-MM-dd').format(checkInTime)}"),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Check-In: ${DateFormat('HH:mm:ss').format(checkInTime)}"),
-                      Text("Check-Out: ${checkOutTime != null ? DateFormat('HH:mm:ss').format(checkOutTime) : 'Not checked out'}"),
-                      Text("Location: ${details.location ?? 'N/A'}"),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        );
-      },
-    );
-  }
-
   // ✅ Build UI
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.blueAccent, title: Text('Live Attendance')),
+      appBar: AppBar(backgroundColor: Colors.blueAccent, title: const Text('Live Attendance')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(     // ✅ Added scrollable behavior
+        child: SingleChildScrollView(
           child: Column(
             children: [
               Row(
@@ -218,12 +186,6 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
               _buildInfoCard('Check-In Location', checkInLocation),
               _buildInfoCard('Check-Out Time', checkOutTime),
               _buildInfoCard('Check-Out Location', checkOutLocation),
-              const SizedBox(height: 20),
-              const Text("Attendance History", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(
-                height: 400,                    // ✅ Add height constraint to prevent overflow
-                child: _buildAttendanceHistory(),
-              ),
             ],
           ),
         ),
