@@ -4,11 +4,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AdminPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  String getGreeting() {
+    int hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good Morning';
+    } else if (hour < 18) {
+      return 'Good Afternoon';
+    } else {
+      return 'Good Evening';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Admin Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Admin Dashboard', style: TextStyle()),
         backgroundColor: Colors.blueAccent,
         centerTitle: true,
         actions: [
@@ -20,7 +31,7 @@ class AdminPage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // ✅ Header Section (Styled like Dashboard)
+          // ✅ Header Section with Dynamic Greeting
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
@@ -42,9 +53,9 @@ class AdminPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  '',
+                  getGreeting(),  // Display dynamic greeting
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -52,14 +63,14 @@ class AdminPage extends StatelessWidget {
                 SizedBox(height: 8),
                 Text(
                   'Manage employees and reports',
-                  style: TextStyle(fontSize: 16, color: Colors.white70),
+                  style: TextStyle(fontSize: 18, color: Colors.white70),
                 ),
               ],
             ),
           ),
           SizedBox(height: 20),
 
-          // ✅ Menu Grid (Styled like Dashboard Buttons)
+          // ✅ Menu Grid
           Expanded(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
@@ -82,7 +93,7 @@ class AdminPage extends StatelessWidget {
     );
   }
 
-  // ✅ Styled Menu Card
+  // ✅ Menu Card Widget
   Widget _buildMenuCard(String label, IconData icon, BuildContext context) {
     return GestureDetector(
       onTap: () {
