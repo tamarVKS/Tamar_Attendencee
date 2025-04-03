@@ -85,6 +85,7 @@ ProfileDetails.fromJson(Map<String, dynamic> json): this(
       'EmployeeID':EmployeeID,
       'profileImage':profileImage,
     };
+
   }
 
 

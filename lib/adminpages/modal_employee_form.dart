@@ -94,7 +94,7 @@ class _EmployeeFormState extends State<EmployeeForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Employee Form', style: TextStyle(fontWeight: FontWeight.bold)), centerTitle: true),
+      appBar: AppBar(title: Text('Employee Form', style: TextStyle(fontWeight: FontWeight.bold)), centerTitle: true, backgroundColor: Colors.blueAccent,),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
         child: Form(
