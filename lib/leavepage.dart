@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 class LeaveManagementScreen extends StatefulWidget {
   @override
@@ -156,21 +158,27 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
   }
 
 
-  void _submitLeaveRequest() {
+  void _submitLeaveRequest() async {
     if (_startDate == null || _endDate == null || _selectedLeaveType == null) return;
 
     int leaveDays = _endDate!.difference(_startDate!).inDays + 1;
-    if (leaveDays > 0 && leaveDays <= availableLeave) {
-      setState(() {
-        leaveRequests.add({
-          'dateRange': '${DateFormat('yyyy-MM-dd').format(_startDate!)} to ${DateFormat('yyyy-MM-dd').format(_endDate!)}',
-          'type': _selectedLeaveType!,
-          'days': leaveDays.toString(),
-          'status': 'Pending',
-        });
-        availableLeave -= leaveDays;
-      });
-    }
+    if (leaveDays > availableLeave) return;
+
+    final leaveId = Uuid().v4(); // Generate unique ID
+
+    await FirebaseFirestore.instance.collection('leave_requests').doc(leaveId).set({
+      'id': leaveId,
+      'employeeId': 'employee_123', // Replace with actual employee ID
+      'type': _selectedLeaveType!,
+      'startDate': Timestamp.fromDate(_startDate!),
+      'endDate': Timestamp.fromDate(_endDate!),
+      'days': leaveDays,
+      'status': 'Pending',
+    });
+
+    setState(() {
+      availableLeave -= leaveDays;
+    });
 
     _startDate = null;
     _endDate = null;

@@ -56,7 +56,7 @@ class _ModalleaveState extends State<Modalleave> {
                     SizedBox(height: 16.0),
                     DropdownButtonFormField<String>(
                       value: _selectedApprover,
-                      items: ['CEO', 'HR Shagun', 'Varun']
+                      items: ['CEO', 'anshika', 'Varun']
                           .map((approver) => DropdownMenuItem(
                         value: approver,
                         child: Text(approver),

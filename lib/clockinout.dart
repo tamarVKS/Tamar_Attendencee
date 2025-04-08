@@ -28,14 +28,14 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
   bool isLate = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _fetchLatestCheckInStatus();  // ✅ Fetch latest status every time the screen is visited
+  void initState() {
+    super.initState();
+    _fetchLatestCheckInStatus();
   }
 
-  // ✅ Fetch Latest Check-In Status
   Future<void> _fetchLatestCheckInStatus() async {
-    var snapshot = await _databaseService.getCheckTime().first;
+    var snapshot = await _databaseService.getCheckTimeByName(widget.employeeName).first;
+
     if (snapshot.docs.isNotEmpty) {
       var latestDoc = snapshot.docs.first;
       var data = latestDoc.data() as Map<String, dynamic>;
@@ -43,7 +43,7 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
       CheckInOutDetails details = CheckInOutDetails.fromJson(data);
 
       setState(() {
-        isCheckedIn = details.checkout == null;  // If checkout is null, still checked in
+        isCheckedIn = details.checkout == null;
         checkInId = latestDoc.id;
         checkInTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(details.checkin.toDate());
         checkInLocation = details.location ?? "Unknown";
@@ -51,9 +51,9 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
             ? DateFormat('yyyy-MM-dd HH:mm:ss').format(details.checkout!.toDate())
             : null;
         checkOutLocation = details.checkoutLocation ?? "Unknown";
+        isLate = details.isLate ?? false;
       });
     } else {
-      // No records: reset to default state
       setState(() {
         isCheckedIn = false;
         checkInTime = null;
@@ -61,11 +61,11 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
         checkInLocation = null;
         checkOutLocation = null;
         checkInId = null;
+        isLate = false;
       });
     }
   }
 
-  // ✅ Fetch Current Location
   Future<String?> _getCurrentLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return 'Location services are disabled.';
@@ -83,8 +83,7 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
     Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
 
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-          position.latitude, position.longitude);
+      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
       Placemark place = placemarks.first;
       return "${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}";
     } catch (e) {
@@ -92,7 +91,6 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
     }
   }
 
-  // ✅ Clock In Function
   Future<void> clockIn() async {
     setState(() => isLoading = true);
 
@@ -110,6 +108,7 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
       name: widget.employeeName,
       checkin: Timestamp.fromDate(now),
       location: location,
+      isLate: isLate,
     );
 
     await _databaseService.addCheckInOutData(checkInData).then((docRef) {
@@ -126,7 +125,6 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
     });
   }
 
-  // ✅ Clock Out Function
   Future<void> clockOut() async {
     if (!isCheckedIn || checkInId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -162,7 +160,6 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
     });
   }
 
-  // ✅ Build UI
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -175,8 +172,8 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildActionButton('CHECK IN', Icons.login, Colors.green, isCheckedIn ? null : clockIn),
-                  _buildActionButton('CHECK OUT', Icons.logout, Colors.red, isCheckedIn ? clockOut : null),
+                  _buildActionButton('CHECK IN', Icons.login, Colors.green, isCheckedIn ? null : clockIn, isLoading),
+                  _buildActionButton('CHECK OUT', Icons.logout, Colors.red, isCheckedIn ? clockOut : null, isLoading),
                 ],
               ),
               const SizedBox(height: 20),
@@ -192,22 +189,30 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
       ),
     );
   }
+}
 
-  Widget _buildActionButton(String text, IconData icon, Color color, VoidCallback? onPressed) {
-    return ElevatedButton.icon(
-      onPressed: isLoading ? null : onPressed,
-      icon: isLoading ? const CircularProgressIndicator(color: Colors.white) : Icon(icon),
-      label: Text(text),
-      style: ElevatedButton.styleFrom(backgroundColor: onPressed == null ? Colors.grey : color),
-    );
-  }
+Widget _buildActionButton(String text, IconData icon, Color color, VoidCallback? onPressed, bool isLoading) {
+  return ElevatedButton.icon(
+    onPressed: isLoading ? null : onPressed,
+    icon: isLoading
+        ? const SizedBox(
+      height: 16,
+      width: 16,
+      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+    )
+        : Icon(icon),
+    label: Text(text),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: onPressed == null ? Colors.grey : color,
+    ),
+  );
+}
 
-  Widget _buildInfoCard(String title, String? value, [Color textColor = Colors.black]) {
-    return Card(
-      child: ListTile(
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
-        subtitle: Text(value ?? 'Not recorded yet', style: TextStyle(color: textColor)),
-      ),
-    );
-  }
+Widget _buildInfoCard(String title, String? value, [Color textColor = Colors.black]) {
+  return Card(
+    child: ListTile(
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+      subtitle: Text(value ?? 'Not recorded yet', style: TextStyle(color: textColor)),
+    ),
+  );
 }

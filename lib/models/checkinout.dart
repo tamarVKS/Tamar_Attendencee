@@ -7,14 +7,16 @@ class CheckInOutDetails {
   Timestamp? checkout;            // ✅ Made checkout nullable
   String? location;               // ✅ Added location field
   String? checkoutLocation;       // ✅ Added checkoutLocation field
+  bool isLate;                    // ✅ Added isLate field
 
   CheckInOutDetails({
     this.id,
     required this.name,
     required this.checkin,
-    this.checkout,                // ✅ Made checkout nullable
+    this.checkout,
     this.location,
-    this.checkoutLocation,        // ✅ Added checkoutLocation to constructor
+    this.checkoutLocation,
+    required this.isLate,         // ✅ Required isLate in constructor
   });
 
   // ✅ fromJson constructor
@@ -22,11 +24,12 @@ class CheckInOutDetails {
       : id = json['id'] as String?,
         name = json['name']! as String,
         checkin = json['checkin']! as Timestamp,
-        checkout = json['checkout'] as Timestamp?,               // ✅ Nullable checkout
-        location = json['location'] as String?,                   // ✅ Map location field
-        checkoutLocation = json['checkoutLocation'] as String?;   // ✅ Map checkoutLocation field
+        checkout = json['checkout'] as Timestamp?,
+        location = json['location'] as String?,
+        checkoutLocation = json['checkoutLocation'] as String?,
+        isLate = json['isLate'] as bool? ?? false; // ✅ Default to false if null
 
-  // ✅ toJson method (including location and checkoutLocation)
+  // ✅ toJson method (including location, checkoutLocation, isLate)
   Map<String, Object?> toJson() {
     return {
       'id': id,
@@ -34,7 +37,8 @@ class CheckInOutDetails {
       'checkin': checkin,
       'checkout': checkout,
       'location': location,
-      'checkoutLocation': checkoutLocation,     // ✅ Added checkoutLocation
+      'checkoutLocation': checkoutLocation,
+      'isLate': isLate,
     };
   }
 
@@ -46,6 +50,7 @@ class CheckInOutDetails {
     Timestamp? checkout,
     String? location,
     String? checkoutLocation,
+    bool? isLate,
   }) {
     return CheckInOutDetails(
       id: id ?? this.id,
@@ -54,6 +59,7 @@ class CheckInOutDetails {
       checkout: checkout ?? this.checkout,
       location: location ?? this.location,
       checkoutLocation: checkoutLocation ?? this.checkoutLocation,
+      isLate: isLate ?? this.isLate,
     );
   }
 }

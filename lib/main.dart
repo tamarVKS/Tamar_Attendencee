@@ -11,6 +11,8 @@ import 'package:tamar_attendence/report_attendance.dart';
 import 'package:tamar_attendence/screen/splash.dart';
 import 'package:tamar_attendence/signup_page.dart';
 import 'SignIn.dart';
+import 'adminpages/modal_Leave.dart';
+import 'adminpages/modal_Leave_approval.dart';
 import 'attendance_history.dart';
 import 'changePassword.dart';
 import 'clockinout.dart';
@@ -20,6 +22,7 @@ import 'firebase_options.dart';
 import 'leavepage.dart';
 import 'login_screen.dart';
 import 'notification_page.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,7 +69,7 @@ class MyApp extends StatelessWidget {
           case '/attendance_history':
             return MaterialPageRoute(builder: (context) => AttendanceHistoryScreen());
           case '/report_attendance':
-            return MaterialPageRoute(builder: (context) => ReportAttendanceScreen());
+            return MaterialPageRoute(builder: (context) => AttendanceHistoryScreen());
           case '/leave_page':
             return MaterialPageRoute(builder: (context) => LeaveManagementScreen());
           case '/notification_page':
@@ -85,6 +88,10 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (context) => EmployeeScreen());
           case '/modal_employee_form':
             return MaterialPageRoute(builder: (context) => EmployeeForm());
+            case '/modal_Leave_approval':
+            return MaterialPageRoute(builder: (context) => LeaveApprovalScreen());
+          case '/modal_Leave':
+            return MaterialPageRoute(builder: (context) => Modalleave());
           default:
             return MaterialPageRoute(builder: (context) => LoginScreen());
         }

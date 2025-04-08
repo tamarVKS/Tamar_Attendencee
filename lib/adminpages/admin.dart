@@ -19,7 +19,7 @@ class AdminPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Admin Dashboard', style: TextStyle()),
+        title: Text('Admin Dashboard'),
         backgroundColor: Colors.blueAccent,
         centerTitle: true,
         actions: [
@@ -80,10 +80,10 @@ class AdminPage extends StatelessWidget {
                 mainAxisSpacing: 15,
                 childAspectRatio: 1.0,
                 children: [
-                  _buildMenuCard('Employee', Icons.people, context),
-                  _buildMenuCard('Office', Icons.location_on, context),
-                  _buildMenuCard('Report Attendance', Icons.assignment, context),
-                  _buildMenuCard('Report Leave', Icons.not_interested, context),
+                  _buildMenuCard('Employee', Icons.people, context, '/modal_employee_details'),
+                  _buildMenuCard('Office', Icons.location_on, context, '/modal_employee_details'),
+                  _buildMenuCard('Report Attendance', Icons.assignment, context, '/attendance_history'),
+                  _buildMenuCard('Report Leave', Icons.not_interested, context, '/modal_Leave_approval'),
                 ],
               ),
             ),
@@ -93,11 +93,11 @@ class AdminPage extends StatelessWidget {
     );
   }
 
-  // ✅ Menu Card Widget
-  Widget _buildMenuCard(String label, IconData icon, BuildContext context) {
+  // ✅ Updated Menu Card Widget
+  Widget _buildMenuCard(String label, IconData icon, BuildContext context, String route) {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, '/modal_employee_details');
+        Navigator.pushNamed(context, route);
       },
       child: Container(
         decoration: BoxDecoration(
