@@ -13,8 +13,8 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   String? _selectedLeaveType;
-  int totalLeave = 12;
-  int availableLeave = 12;
+  int totalLeave = 24;
+  int availableLeave = 24;
 
   void _showLeaveRequestDialog() {
     showModalBottomSheet(

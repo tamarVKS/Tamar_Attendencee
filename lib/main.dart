@@ -22,7 +22,6 @@ import 'firebase_options.dart';
 import 'leavepage.dart';
 import 'login_screen.dart';
 import 'notification_page.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,57 +42,68 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false, //  Removes debug banner
+      title: 'Tamar Attendance',
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+      ),
+      themeMode: ThemeMode.system, // 🌙 Enables dark mode support
       initialRoute: '/login_screen',
       onGenerateRoute: (settings) {
-        // Handle named routes with parameters
-        if (settings.name == '/clockinout') {
-          final args = settings.arguments as Map<String, dynamic>? ?? {};
-          return MaterialPageRoute(
-            builder: (context) => LiveAttendanceScreen(
-              employeeName: args['employeeName'] ?? 'Unknown',
-            ),
-          );
-        }
+        final args = settings.arguments as Map<String, dynamic>? ?? {};
 
-        // Default named routes
         switch (settings.name) {
           case '/splash':
-            return MaterialPageRoute(builder: (context) => Splashscreen());
+            return MaterialPageRoute(builder: (_) => Splashscreen());
           case '/login_screen':
-            return MaterialPageRoute(builder: (context) => LoginScreen());
-          case '/dashboard':
-            return MaterialPageRoute(builder: (context) => DashboardScreen());
+            return MaterialPageRoute(builder: (_) => LoginScreen());
           case '/profile':
-            return MaterialPageRoute(builder: (context) => ProfilePage());
+            return MaterialPageRoute(builder: (_) => ProfilePage());
           case '/attendance_history':
-            return MaterialPageRoute(builder: (context) => AttendanceHistoryScreen());
+            return MaterialPageRoute(builder: (_) => AttendanceHistoryScreen());
           case '/report_attendance':
-            return MaterialPageRoute(builder: (context) => AttendanceHistoryScreen());
+            return MaterialPageRoute(builder: (_) => ReportAttendanceScreen());
           case '/leave_page':
-            return MaterialPageRoute(builder: (context) => LeaveManagementScreen());
+            return MaterialPageRoute(builder: (_) => LeaveManagementScreen());
           case '/notification_page':
-            return MaterialPageRoute(builder: (context) => NotificationsScreen());
+            return MaterialPageRoute(builder: (_) => NotificationsScreen());
           case '/personalInformation':
-            return MaterialPageRoute(builder: (context) => PersonalInformationScreen());
+            return MaterialPageRoute(builder: (_) => PersonalInformationScreen());
           case '/changePassword':
-            return MaterialPageRoute(builder: (context) => ChangePasswordScreen());
+            return MaterialPageRoute(builder: (_) => ChangePasswordScreen());
           case '/forget_password':
-            return MaterialPageRoute(builder: (context) => ForgotPasswordPage());
+            return MaterialPageRoute(builder: (_) => ForgotPasswordPage());
           case '/employees_details':
-            return MaterialPageRoute(builder: (context) => EmployeeScreens());
+            return MaterialPageRoute(builder: (_) => EmployeeScreens());
           case '/admin':
-            return MaterialPageRoute(builder: (context) => AdminPage());
+            return MaterialPageRoute(builder: (_) => AdminPage());
           case '/modal_employee_details':
-            return MaterialPageRoute(builder: (context) => EmployeeScreen());
+            return MaterialPageRoute(builder: (_) => EmployeeScreen());
           case '/modal_employee_form':
-            return MaterialPageRoute(builder: (context) => EmployeeForm());
-            case '/modal_Leave_approval':
-            return MaterialPageRoute(builder: (context) => LeaveApprovalScreen());
+            return MaterialPageRoute(builder: (_) => EmployeeForm());
+          case '/modal_Leave_approval':
+            return MaterialPageRoute(builder: (_) => LeaveApprovalScreen());
           case '/modal_Leave':
-            return MaterialPageRoute(builder: (context) => Modalleave());
+            return MaterialPageRoute(builder: (_) => Modalleave());
+          case '/dashboard':
+            return MaterialPageRoute(
+              builder: (_) => DashboardScreen(userId: args['userId'] ?? ''),
+            );
+          case '/clockinout':
+            return MaterialPageRoute(
+              builder: (_) => LiveAttendanceScreen(
+                employeeName: args['employeeName'] ?? 'Unknown',
+              ),
+            );
           default:
-            return MaterialPageRoute(builder: (context) => LoginScreen());
+            return MaterialPageRoute(builder: (_) => LoginScreen());
         }
       },
     );

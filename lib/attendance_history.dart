@@ -7,7 +7,8 @@ class AttendanceHistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Attendance History', style: TextStyle(fontWeight: FontWeight.bold)),
+        title:
+        Text('Attendance History', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.blueAccent,
         centerTitle: true,
         elevation: 4.0,
@@ -80,42 +81,105 @@ class AttendanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 6.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15.0),
-      ),
-      margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 5.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '$date - $name',
-              style: TextStyle(fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87),
-            ),
-            SizedBox(height: 10.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildTimeEntry(Icons.login, 'CLOCK IN', clockIn, Colors.green,
-                    checkInLocation),
-                _buildTimeEntry(Icons.logout, 'CLOCK OUT', clockOut, Colors.red,
-                    checkOutLocation),
-              ],
-            ),
-          ],
+    return InkWell(
+      onTap: () => _showAttendanceDetails(context),
+      child: Card(
+        elevation: 6.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
         ),
+        margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 5.0),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$date - $name',
+                style: TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              ),
+              SizedBox(height: 10.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildTimeEntry(Icons.login, 'CLOCK IN', clockIn, Colors.green,
+                      checkInLocation),
+                  _buildTimeEntry(Icons.logout, 'CLOCK OUT', clockOut, Colors.red,
+                      checkOutLocation),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAttendanceDetails(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 50,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              Text("Attendance Details",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              SizedBox(height: 15),
+              _detailRow("Date", date),
+              _detailRow("Employee", name),
+              _detailRow("Clock In Time", clockIn),
+              _detailRow("Clock Out Time", clockOut),
+              _detailRow("Check-In Location", checkInLocation),
+              _detailRow("Check-Out Location", checkOutLocation),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "$label: ",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(color: Colors.black87),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildTimeEntry(IconData icon, String label, String time, Color color,
       String location) {
-    return Expanded( // Added Expanded widget to prevent overflow
+    return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -129,20 +193,17 @@ class AttendanceCard extends StatelessWidget {
           SizedBox(height: 4.0),
           Text(
             time,
-            style: TextStyle(fontSize: 14,
-                color: Colors.grey.shade700,
-                fontWeight: FontWeight.w500),
+            style: TextStyle(
+                fontSize: 14, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
           ),
           Text(
             location,
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             overflow: TextOverflow.ellipsis,
-            // Added ellipsis for long location names
-            maxLines: 1, // Limit the number of lines
+            maxLines: 1,
           ),
         ],
       ),
     );
   }
 }
-

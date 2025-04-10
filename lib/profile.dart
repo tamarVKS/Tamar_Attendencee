@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'login_screen.dart';  // Ensure you import your LoginScreen
+import 'login_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -18,48 +18,43 @@ class _ProfilePageState extends State<ProfilePage> {
     _user = _auth.currentUser;
   }
 
-  /// Logout function with proper navigation handling
   void _logout(BuildContext context) async {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Confirm Logout"),
-          content: const Text("Are you sure you want to log out?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-
-                // Properly sign out and clear navigation stack
-                await _auth.signOut();
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
-                      (Route<dynamic> route) => false,
-                );
-              },
-              child: const Text("Logout", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
+      builder: (context) => AlertDialog(
+        title: const Text("Logout"),
+        content: const Text("Are you sure you want to logout?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              await _auth.signOut();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => LoginScreen()),
+                    (route) => false,
+              );
+            },
+            child: const Text("Logout", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_user == null) {
-      return const Center(child: Text('No user logged in.'));
-    }
+    if (_user == null) return const Center(child: Text("User not logged in"));
 
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('PROFILE'),
-        backgroundColor: Colors.blueAccent,
+        title: const Text("Profile"),
+        backgroundColor: Colors.indigoAccent,
+        elevation: 0,
+        foregroundColor: Colors.black87,
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
@@ -67,84 +62,94 @@ class _ProfilePageState extends State<ProfilePage> {
             .doc(_user!.uid)
             .snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting)
             return const Center(child: CircularProgressIndicator());
-          }
 
-          if (snapshot.hasError) {
-            return const Center(child: Text('Something went wrong.'));
-          }
-
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(child: Text('No data available'));
-          }
+          if (!snapshot.hasData || !snapshot.data!.exists)
+            return const Center(child: Text("Profile not found"));
 
           var data = snapshot.data!.data() as Map<String, dynamic>?;
 
-          if (data == null || data.isEmpty) {
-            return const Center(child: Text('No data available'));
-          }
-
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Profile Image and Info
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: data['profileImage'] != null &&
-                          data['profileImage'].isNotEmpty
-                          ? NetworkImage(data['profileImage'])
-                          : const AssetImage('assets/new.png') as ImageProvider,
-                    ),
-                    const SizedBox(width: 20),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          data['name'] ?? 'N/A',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+                // Profile Card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 10,
+                        color: Colors.black12,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 45,
+                        backgroundImage: data?['profileImage'] != null && data!['profileImage'].isNotEmpty
+                            ? NetworkImage(data['profileImage'])
+                            : const AssetImage('assets/new.png') as ImageProvider,
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              data?['name'] ?? 'No Name',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              data?['position'] ?? 'Position not set',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          data['position'] ?? 'Position not set',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
 
-                // Stats Section
+                // Stats Grid
                 Row(
                   children: [
-                    _buildStatCard('Attendance', data['attendance']?.toString() ?? '0'),
-                    _buildStatCard('Hours', data['hours']?.toString() ?? '0'),
-                    _buildStatCard('Late', data['late']?.toString() ?? '0'),
-                    _buildStatCard('Leaves', data['leaves']?.toString() ?? '0'),
+                    _buildStatCard("Attendance", data?['attendance']?.toString() ?? '0'),
+                    const SizedBox(width: 10),
+                    _buildStatCard("Hours", data?['hours']?.toString() ?? '0'),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _buildStatCard("Late", data?['late']?.toString() ?? '0'),
+                    const SizedBox(width: 10),
+                    _buildStatCard("Leaves", data?['leaves']?.toString() ?? '0'),
+                  ],
+                ),
+                const SizedBox(height: 30),
 
                 // Menu Options
-                _buildMenuOption(Icons.person, 'Personal Information', () {
+                _buildMenuOption(Icons.person, "Personal Information", () {
                   Navigator.pushNamed(context, '/personalInformation');
                 }),
-                _buildMenuOption(Icons.lock, 'Change Password', () {
+                _buildMenuOption(Icons.lock, "Change Password", () {
                   Navigator.pushNamed(context, '/changePassword');
                 }),
-                _buildMenuOption(Icons.logout, 'Logout', () {
-                  _logout(context);
-                }),
+                _buildMenuOption(Icons.logout, "Logout", () => _logout(context)),
               ],
             ),
           );
@@ -155,42 +160,56 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildStatCard(String title, String value) {
     return Expanded(
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 3,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 10,
+              color: Colors.black12,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildMenuOption(IconData icon, String title, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.blueAccent),
-      title: Text(title),
-      trailing: const Icon(Icons.arrow_forward_ios),
-      onTap: onTap,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        leading: Icon(icon, color: Colors.blueAccent),
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 16),
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: onTap,
+      ),
     );
   }
 }
