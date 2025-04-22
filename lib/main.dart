@@ -4,28 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:tamar_attendence/adminpages/admin.dart';
 import 'package:tamar_attendence/adminpages/modal_employee_details.dart';
 import 'package:tamar_attendence/adminpages/modal_employee_form.dart';
+import 'package:tamar_attendence/adminpages/modal_Leave.dart';
+import 'package:tamar_attendence/adminpages/modal_Leave_approval.dart';
+import 'package:tamar_attendence/attendance_history.dart';
+import 'package:tamar_attendence/changePassword.dart';
+import 'package:tamar_attendence/clockinout.dart';
+import 'package:tamar_attendence/dashboard.dart';
+import 'package:tamar_attendence/employees_details.dart';
+import 'package:tamar_attendence/firebase_options.dart';
 import 'package:tamar_attendence/forget_password.dart';
+import 'package:tamar_attendence/login_screen.dart';
+import 'package:tamar_attendence/notification_page.dart';
 import 'package:tamar_attendence/perosnalInformation.dart';
 import 'package:tamar_attendence/profile.dart';
 import 'package:tamar_attendence/report_attendance.dart';
 import 'package:tamar_attendence/screen/splash.dart';
 import 'package:tamar_attendence/signup_page.dart';
-import 'SignIn.dart';
-import 'adminpages/modal_Leave.dart';
-import 'adminpages/modal_Leave_approval.dart';
-import 'attendance_history.dart';
-import 'changePassword.dart';
-import 'clockinout.dart';
-import 'dashboard.dart';
-import 'employees_details.dart';
-import 'firebase_options.dart';
-import 'leavepage.dart';
-import 'login_screen.dart';
-import 'notification_page.dart';
+import 'package:tamar_attendence/leavepage.dart'; // ⬅️ updated leave page
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -42,7 +40,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, //  Removes debug banner
+      debugShowCheckedModeBanner: false,
       title: 'Tamar Attendance',
       theme: ThemeData(
         brightness: Brightness.light,
@@ -54,8 +52,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
-      themeMode: ThemeMode.system, // 🌙 Enables dark mode support
-      initialRoute: '/login_screen',
+      themeMode: ThemeMode.system,
+      initialRoute: '/modal_leave_approval',
       onGenerateRoute: (settings) {
         final args = settings.arguments as Map<String, dynamic>? ?? {};
 
@@ -64,6 +62,8 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => Splashscreen());
           case '/login_screen':
             return MaterialPageRoute(builder: (_) => LoginScreen());
+          case '/signup':
+            return MaterialPageRoute(builder: (_) => SignUpPage());
           case '/profile':
             return MaterialPageRoute(builder: (_) => ProfilePage());
           case '/attendance_history':

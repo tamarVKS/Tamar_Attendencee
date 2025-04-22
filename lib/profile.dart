@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import 'perosnalInformation.dart';
+import 'changePassword.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -22,12 +24,13 @@ class _ProfilePageState extends State<ProfilePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Logout"),
-        content: const Text("Are you sure you want to logout?"),
+        backgroundColor: Color(0xFF003459),
+        title: const Text("Logout", style: TextStyle(color: Colors.white)),
+        content: const Text("Are you sure you want to logout?", style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Cancel"),
+            child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () async {
@@ -37,7 +40,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     (route) => false,
               );
             },
-            child: const Text("Logout", style: TextStyle(color: Colors.red)),
+            child: const Text("Logout", style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -49,12 +52,13 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_user == null) return const Center(child: Text("User not logged in"));
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Color(0xFF001F3F),
       appBar: AppBar(
-        title: const Text("Profile"),
-        backgroundColor: Colors.indigoAccent,
+        title: const Text("My Profile"),
+        centerTitle: true,
+        backgroundColor: Color(0xFF003459),
+        foregroundColor: Colors.white,
         elevation: 0,
-        foregroundColor: Colors.black87,
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
@@ -63,30 +67,27 @@ class _ProfilePageState extends State<ProfilePage> {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting)
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Color(0xFFFFB200)));
 
           if (!snapshot.hasData || !snapshot.data!.exists)
-            return const Center(child: Text("Profile not found"));
+            return const Center(child: Text("Profile not found", style: TextStyle(color: Colors.white)));
 
           var data = snapshot.data!.data() as Map<String, dynamic>?;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                // Profile Card
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF004E64), Color(0xFF001F3F)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 10,
-                        color: Colors.black12,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
+                    boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 8)],
                   ),
                   child: Row(
                     children: [
@@ -106,50 +107,30 @@ class _ProfilePageState extends State<ProfilePage> {
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 8),
                             Text(
-                              data?['position'] ?? 'Position not set',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 16,
-                              ),
+                              data?['email'] ?? 'No Email',
+                              style: const TextStyle(color: Colors.white70),
                             ),
                           ],
                         ),
-                      ),
+                      )
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-
-                // Stats Grid
-                Row(
-                  children: [
-                    _buildStatCard("Attendance", data?['attendance']?.toString() ?? '0'),
-                    const SizedBox(width: 10),
-                    _buildStatCard("Hours", data?['hours']?.toString() ?? '0'),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _buildStatCard("Late", data?['late']?.toString() ?? '0'),
-                    const SizedBox(width: 10),
-                    _buildStatCard("Leaves", data?['leaves']?.toString() ?? '0'),
-                  ],
-                ),
                 const SizedBox(height: 30),
-
-                // Menu Options
-                _buildMenuOption(Icons.person, "Personal Information", () {
-                  Navigator.pushNamed(context, '/personalInformation');
+                _buildProfileTile('Edit Personal Info', Icons.edit, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => PersonalInformationScreen()));
                 }),
-                _buildMenuOption(Icons.lock, "Change Password", () {
-                  Navigator.pushNamed(context, '/changePassword');
+                const SizedBox(height: 15),
+                _buildProfileTile('Change Password', Icons.lock_outline, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => ChangePasswordScreen()));
                 }),
-                _buildMenuOption(Icons.logout, "Logout", () => _logout(context)),
+                const SizedBox(height: 15),
+                _buildProfileTile('Logout', Icons.logout, () => _logout(context), isLogout: true),
               ],
             ),
           );
@@ -158,57 +139,34 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildStatCard(String title, String value) {
-    return Expanded(
+  Widget _buildProfileTile(String title, IconData icon, VoidCallback onTap, {bool isLogout = false}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Color(0xFF003459),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 10,
-              color: Colors.black12,
-              offset: Offset(0, 4),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
         ),
-        child: Column(
+        child: Row(
           children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+            Icon(icon, size: 28, color: isLogout ? Colors.redAccent : Color(0xFFFFB200)),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isLogout ? Colors.redAccent : Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
-            ),
+            Icon(Icons.arrow_forward_ios, size: 18, color: Colors.white38),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildMenuOption(IconData icon, String title, VoidCallback onTap) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        leading: Icon(icon, color: Colors.blueAccent),
-        title: Text(
-          title,
-          style: const TextStyle(fontSize: 16),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: onTap,
       ),
     );
   }

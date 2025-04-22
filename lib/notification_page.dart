@@ -6,38 +6,53 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  int selectedIndex = 0; // Track the selected notification
+  int selectedIndex = -1;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+        title: const Text(
+          'Notifications',
+          style: TextStyle(color: Colors.white),
         ),
-        title: Text('Notifications'),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      body: ListView.builder(
-        itemCount: 4, // Replace with the actual number of notifications
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                selectedIndex = index; // Update selected index
-              });
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          child: ListView.builder(
+            itemCount: 4,
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedIndex = index;
+                  });
+                },
+                child: NotificationCard(
+                  title: 'Leave approval',
+                  content: 'Your leave request has been approved!',
+                  relative: '2 hours ago',
+                  isSelected: index == selectedIndex,
+                ),
+              );
             },
-            child: NotificationCard(
-              title: 'Leave approval', // Replace with actual notification title
-              content: '[content]', // Replace with actual notification content
-              relative: '[relative]', // Replace with actual relative time
-              isSelected: index == selectedIndex,
-            ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -49,7 +64,7 @@ class NotificationCard extends StatelessWidget {
   final String relative;
   final bool isSelected;
 
-  NotificationCard({
+  const NotificationCard({
     required this.title,
     required this.content,
     required this.relative,
@@ -58,17 +73,57 @@ class NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: isSelected ? Colors.grey[200] : Colors.white,
-      child: ListTile(
-        leading: Icon(Icons.notifications, color: Colors.blueAccent),
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(content),
-            Text(relative, style: TextStyle(color: Colors.grey)),
-          ],
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: Card(
+        elevation: 8,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: isSelected
+              ? const BorderSide(color: Color(0xFFFFD700), width: 2)
+              : BorderSide.none,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFD700), Color(0xFFF5C518)],
+                  ),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: const Icon(Icons.notifications, color: Colors.white),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    const SizedBox(height: 6),
+                    Text(content,
+                        style: const TextStyle(fontSize: 15, color: Colors.black54)),
+                    const SizedBox(height: 6),
+                    Text(relative,
+                        style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

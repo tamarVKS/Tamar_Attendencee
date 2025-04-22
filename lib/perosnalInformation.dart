@@ -18,7 +18,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   File? _profileImage;
   String? _profileImageUrl;
   bool _isSaving = false;
-  bool _isAdmin = false; // 🔥 Admin permission flag
+  bool _isAdmin = false;
 
   late Future<void> _loadDataFuture;
   final Map<String, TextEditingController> controllers = {};
@@ -29,20 +29,16 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     _loadDataFuture = _loadUserData();
   }
 
-  /// ✅ Load User Data and Check Admin Permission
   Future<void> _loadUserData() async {
     _user = _auth.currentUser;
 
     if (_user != null) {
-      // 🔥 Check if the user is an admin
       final adminDoc = await FirebaseFirestore.instance
-          .collection('Admins') // Ensure you have an "Admins" collection
+          .collection('Admins')
           .doc(_user!.uid)
           .get();
+      _isAdmin = adminDoc.exists;
 
-      _isAdmin = adminDoc.exists; // Admin if document exists
-
-      // 🔥 Load user profile information
       final docSnapshot = await FirebaseFirestore.instance
           .collection('ProfileInformation')
           .doc(_user!.uid)
@@ -73,26 +69,21 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     }
   }
 
-  /// ✅ Pick and Upload Image (Admin Only)
   Future<void> _pickImage() async {
-    if (!_isAdmin) return;  // Prevent non-admins from picking an image
+    if (!_isAdmin) return;
 
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-
     if (pickedFile != null) {
       setState(() {
         _profileImage = File(pickedFile.path);
       });
-
       await _uploadImage();
     }
   }
 
-  /// ✅ Upload Image and Save URL (Admin Only)
   Future<void> _uploadImage() async {
     if (_user != null && _profileImage != null && _isAdmin) {
       String filePath = 'profile_images/${_user!.uid}.jpg';
-
       try {
         TaskSnapshot uploadTask = await FirebaseStorage.instance
             .ref(filePath)
@@ -115,15 +106,11 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     }
   }
 
-  /// ✅ Save User Data (Admin Only)
   Future<void> _saveUserData() async {
     if (!_isAdmin || _user == null) return;
 
     setState(() => _isSaving = true);
-
-    if (_profileImage != null) {
-      await _uploadImage();
-    }
+    if (_profileImage != null) await _uploadImage();
 
     final Map<String, dynamic> userData = {
       'name': controllers['Name']?.text ?? '',
@@ -135,6 +122,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
       'department': controllers['Department']?.text ?? '',
       'joiningDate': controllers['Joining Date']?.text ?? '',
       'position': controllers['Position']?.text ?? '',
+      'Employment Type': controllers['Employment Type']?.text ?? '',
       'profileImage': _profileImageUrl ?? ''
     };
 
@@ -144,7 +132,6 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
         .set(userData, SetOptions(merge: true));
 
     setState(() => _isSaving = false);
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Profile updated successfully!")),
     );
@@ -153,22 +140,24 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF001F3F),
       appBar: AppBar(
-        title: Text("Personal Information"),
-        backgroundColor: Colors.blueAccent,
-        elevation: 4,
+        title: const Text("Personal Information"),
+        backgroundColor: Color(0xFF003459),
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: FutureBuilder(
         future: _loadDataFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Colors.white));
           } else if (snapshot.hasError) {
-            return Center(child: Text("Error loading data"));
+            return const Center(child: Text("Error loading data", style: TextStyle(color: Colors.redAccent)));
           }
 
           return SingleChildScrollView(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 Stack(
@@ -176,37 +165,37 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                   children: [
                     CircleAvatar(
                       radius: 65,
-                      backgroundColor: Colors.grey[300],
+                      backgroundColor: Colors.grey[400],
                       backgroundImage: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
                           ? NetworkImage(_profileImageUrl!)
                           : AssetImage('assets/new.png') as ImageProvider,
                     ),
-                    if (_isAdmin)  // 🔥 Show camera icon only for admins
+                    if (_isAdmin)
                       GestureDetector(
                         onTap: _pickImage,
                         child: CircleAvatar(
                           radius: 20,
-                          backgroundColor: Colors.blue,
-                          child: Icon(Icons.camera_alt, color: Colors.white),
+                          backgroundColor: Color(0xFFFFD700),
+                          child: Icon(Icons.camera_alt, color: Colors.black),
                         ),
                       ),
                   ],
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 ...controllers.entries.map((entry) => _buildTile(entry.key, entry.value)).toList(),
-                SizedBox(height: 30),
-                if (_isAdmin)  // 🔥 Save button only for admins
+                const SizedBox(height: 30),
+                if (_isAdmin)
                   ElevatedButton(
                     onPressed: _isSaving ? null : _saveUserData,
                     style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 40),
+                      backgroundColor: Color(0xFFFFD700),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 40),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      backgroundColor: Colors.blueAccent,
-                      elevation: 5,
                     ),
                     child: _isSaving
-                        ? CircularProgressIndicator(color: Colors.white)
-                        : Text('Save', style: TextStyle(fontSize: 18)),
+                        ? const CircularProgressIndicator(color: Colors.black)
+                        : const Text('Save', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
               ],
             ),
@@ -216,20 +205,21 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     );
   }
 
-  /// ✅ Build Profile Tiles (Disabled for non-admins)
   Widget _buildTile(String title, TextEditingController controller) {
     return Card(
-      elevation: 2,
-      margin: EdgeInsets.symmetric(vertical: 8),
+      color: Colors.white.withOpacity(0.05),
+      elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: TextField(
           controller: controller,
-          enabled: _isAdmin, // 🔥 Disable editing for non-admins
+          enabled: _isAdmin,
+          style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
             labelText: title,
-            labelStyle: TextStyle(fontSize: 16, color: Colors.black87),
+            labelStyle: const TextStyle(color: Colors.white70),
             border: InputBorder.none,
           ),
         ),

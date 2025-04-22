@@ -1,175 +1,187 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
-class AttendanceHistoryScreen extends StatelessWidget {
+class AttendanceHistoryScreen extends StatefulWidget {
+  @override
+  _AttendanceHistoryScreenState createState() => _AttendanceHistoryScreenState();
+}
+
+class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
+  DateTimeRange? selectedDateRange;
+
+  final Color primaryColor = Color(0xFF0D1B2A); // Dark background
+  final Color cardColor = Color(0xFF1B263B); // Card dark blue
+  final Color accentColor = Color(0xFFFFC107); // Gold/yellow accent
+  final Color textLightColor = Colors.white;
+  final Color fadedTextColor = Colors.grey.shade400;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: primaryColor,
       appBar: AppBar(
-        title:
-        Text('Attendance History', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.blueAccent,
-        centerTitle: true,
-        elevation: 4.0,
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('attendance')
-            .orderBy('checkin', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("No attendance history found."));
-          }
-
-          var attendanceDocs = snapshot.data!.docs;
-
-          return ListView.builder(
-            padding: EdgeInsets.all(12.0),
-            itemCount: attendanceDocs.length,
-            itemBuilder: (context, index) {
-              var data = attendanceDocs[index].data() as Map<String, dynamic>;
-
-              DateTime? checkInTime = (data['checkin'] as Timestamp).toDate();
-              DateTime? checkOutTime = data['checkout'] != null
-                  ? (data['checkout'] as Timestamp).toDate()
-                  : null;
-
-              String checkInLocation = data['checkin_location'] ?? 'Unknown';
-              String checkOutLocation = data['checkout_location'] ?? 'Not checked out';
-              String employeeName = data['employee_name'] ?? 'N/A';
-
-              return AttendanceCard(
-                date: DateFormat('yyyy-MM-dd').format(checkInTime),
-                name: employeeName,
-                clockIn: DateFormat('HH:mm:ss').format(checkInTime),
-                clockOut: checkOutTime != null
-                    ? DateFormat('HH:mm:ss').format(checkOutTime)
-                    : 'Not checked out',
-                checkInLocation: checkInLocation,
-                checkOutLocation: checkOutLocation,
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class AttendanceCard extends StatelessWidget {
-  final String date;
-  final String name;
-  final String clockIn;
-  final String clockOut;
-  final String checkInLocation;
-  final String checkOutLocation;
-
-  const AttendanceCard({
-    required this.date,
-    required this.name,
-    required this.clockIn,
-    required this.clockOut,
-    required this.checkInLocation,
-    required this.checkOutLocation,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _showAttendanceDetails(context),
-      child: Card(
-        elevation: 6.0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
+        title: Text(
+          'Attendance History',
+          style: TextStyle(fontWeight: FontWeight.bold, color: textLightColor),
         ),
-        margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 5.0),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$date - $name',
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+        backgroundColor: cardColor,
+        centerTitle: true,
+        elevation: 4,
+        iconTheme: IconThemeData(color: accentColor),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.calendar_today_rounded, color: accentColor),
+            onPressed: () async {
+              DateTimeRange? picked = await showDateRangePicker(
+                context: context,
+                firstDate: DateTime(2023),
+                lastDate: DateTime.now(),
+                initialDateRange: selectedDateRange,
+                builder: (context, child) {
+                  return Theme(
+                    data: ThemeData.dark().copyWith(
+                      colorScheme: ColorScheme.dark(
+                        primary: accentColor,
+                        onPrimary: Colors.black,
+                        surface: cardColor,
+                        onSurface: Colors.white,
+                      ),
+                      dialogBackgroundColor: primaryColor,
+                      textTheme: TextTheme(
+                        bodyLarge: TextStyle(color: Colors.white),
+                        bodyMedium: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (picked != null) {
+                setState(() {
+                  selectedDateRange = picked;
+                });
+              }
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.download_rounded, color: accentColor),
+            onPressed: _generateAndDownloadPDF,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          if (selectedDateRange != null)
+            Container(
+              margin: EdgeInsets.all(12),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(30),
               ),
-              SizedBox(height: 10.0),
-              Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildTimeEntry(Icons.login, 'CLOCK IN', clockIn, Colors.green,
-                      checkInLocation),
-                  _buildTimeEntry(Icons.logout, 'CLOCK OUT', clockOut, Colors.red,
-                      checkOutLocation),
+                  Expanded(
+                    child: Text(
+                      '${DateFormat('dd MMM yyyy').format(selectedDateRange!.start)} - ${DateFormat('dd MMM yyyy').format(selectedDateRange!.end)}',
+                      style: TextStyle(color: textLightColor, fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.clear, color: Colors.redAccent),
+                    onPressed: () => setState(() => selectedDateRange = null),
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showAttendanceDetails(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 50,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              SizedBox(height: 20),
-              Text("Attendance Details",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              SizedBox(height: 15),
-              _detailRow("Date", date),
-              _detailRow("Employee", name),
-              _detailRow("Clock In Time", clockIn),
-              _detailRow("Clock Out Time", clockOut),
-              _detailRow("Check-In Location", checkInLocation),
-              _detailRow("Check-Out Location", checkOutLocation),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _detailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "$label: ",
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-          ),
+            ),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: Colors.black87),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('attendance')
+                  .orderBy('checkin', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator(color: accentColor));
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(
+                    child: Text("No attendance history found.", style: TextStyle(color: fadedTextColor)),
+                  );
+                }
+
+                var filteredDocs = snapshot.data!.docs.where((doc) {
+                  var data = doc.data() as Map<String, dynamic>;
+                  DateTime checkIn = (data['checkin'] as Timestamp).toDate();
+                  if (selectedDateRange != null) {
+                    return checkIn.isAfter(selectedDateRange!.start.subtract(Duration(days: 1))) &&
+                        checkIn.isBefore(selectedDateRange!.end.add(Duration(days: 1)));
+                  }
+                  return true;
+                }).toList();
+
+                if (filteredDocs.isEmpty) {
+                  return Center(
+                    child: Text("No records in selected date range.", style: TextStyle(color: fadedTextColor)),
+                  );
+                }
+
+                Map<String, List<QueryDocumentSnapshot>> groupedByDate = {};
+                for (var doc in filteredDocs) {
+                  var data = doc.data() as Map<String, dynamic>;
+                  DateTime checkIn = (data['checkin'] as Timestamp).toDate();
+                  String formattedDate = DateFormat('EEE, dd MMM yyyy').format(checkIn);
+                  groupedByDate.putIfAbsent(formattedDate, () => []).add(doc);
+                }
+
+                return ListView(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  children: groupedByDate.entries.map((entry) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            entry.key,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: accentColor,
+                            ),
+                          ),
+                        ),
+                        ...entry.value.map((doc) {
+                          var data = doc.data() as Map<String, dynamic>;
+                          DateTime checkInTime = (data['checkin'] as Timestamp).toDate();
+                          DateTime? checkOutTime = data['checkout'] != null
+                              ? (data['checkout'] as Timestamp).toDate()
+                              : null;
+
+                          return AttendanceCard(
+                            name: data['employee_name'] ?? 'N/A',
+                            clockIn: DateFormat('hh:mm a').format(checkInTime),
+                            clockOut: checkOutTime != null
+                                ? DateFormat('hh:mm a').format(checkOutTime)
+                                : 'Not checked out',
+                            checkInLocation: data['checkin_location'] ?? 'Unknown',
+                            checkOutLocation: data['checkout_location'] ?? 'Not checked out',
+                            cardColor: cardColor,
+                            accentColor: accentColor,
+                          );
+                        }).toList(),
+                      ],
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ),
         ],
@@ -177,32 +189,114 @@ class AttendanceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTimeEntry(IconData icon, String label, String time, Color color,
-      String location) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 20),
-              SizedBox(width: 6.0),
-              Text(label, style: TextStyle(fontWeight: FontWeight.w500)),
-            ],
+  Future<void> _generateAndDownloadPDF() async {
+    final pdf = pw.Document();
+    final snapshot = await FirebaseFirestore.instance
+        .collection('attendance')
+        .orderBy('checkin', descending: true)
+        .get();
+
+    final filteredDocs = snapshot.docs.where((doc) {
+      var data = doc.data() as Map<String, dynamic>;
+      DateTime checkIn = (data['checkin'] as Timestamp).toDate();
+      if (selectedDateRange != null) {
+        return checkIn.isAfter(selectedDateRange!.start.subtract(Duration(days: 1))) &&
+            checkIn.isBefore(selectedDateRange!.end.add(Duration(days: 1)));
+      }
+      return true;
+    }).toList();
+
+    pdf.addPage(
+      pw.MultiPage(
+        build: (context) => [
+          pw.Center(
+            child: pw.Text(
+              "MyCompany Attendance Report",
+              style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
+            ),
           ),
-          SizedBox(height: 4.0),
-          Text(
-            time,
-            style: TextStyle(
-                fontSize: 14, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+          pw.SizedBox(height: 10),
+          pw.Center(
+            child: pw.Text(
+              "Generated on ${DateFormat('dd MMM yyyy hh:mm a').format(DateTime.now())}",
+              style: pw.TextStyle(fontSize: 12),
+            ),
           ),
-          Text(
-            location,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
+          pw.SizedBox(height: 20),
+          pw.Table.fromTextArray(
+            headers: ['Date', 'Name', 'Clock In', 'Clock Out', 'Check-In Location', 'Check-Out Location'],
+            data: filteredDocs.map((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              DateTime checkIn = (data['checkin'] as Timestamp).toDate();
+              DateTime? checkOut = data['checkout'] != null ? (data['checkout'] as Timestamp).toDate() : null;
+
+              return [
+                DateFormat('dd MMM yyyy').format(checkIn),
+                data['employee_name'] ?? 'N/A',
+                DateFormat('hh:mm a').format(checkIn),
+                checkOut != null ? DateFormat('hh:mm a').format(checkOut) : 'N/A',
+                data['checkin_location'] ?? 'N/A',
+                data['checkout_location'] ?? 'N/A',
+              ];
+            }).toList(),
           ),
         ],
+      ),
+    );
+
+    final fileName = 'MyCompany_AttendanceReport_${DateFormat('ddMMyyyy_HHmm').format(DateTime.now())}.pdf';
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: fileName,
+    );
+  }
+}
+
+class AttendanceCard extends StatelessWidget {
+  final String name;
+  final String clockIn;
+  final String clockOut;
+  final String checkInLocation;
+  final String checkOutLocation;
+  final Color cardColor;
+  final Color accentColor;
+
+  const AttendanceCard({
+    required this.name,
+    required this.clockIn,
+    required this.clockOut,
+    required this.checkInLocation,
+    required this.checkOutLocation,
+    required this.cardColor,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: cardColor,
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            Divider(color: Colors.white24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Clock In: $clockIn", style: TextStyle(color: accentColor)),
+                Text("Clock Out: $clockOut", style: TextStyle(color: accentColor)),
+              ],
+            ),
+            SizedBox(height: 8),
+            Text("Check-In Location: $checkInLocation", style: TextStyle(color: Colors.grey[300])),
+            Text("Check-Out Location: $checkOutLocation", style: TextStyle(color: Colors.grey[300])),
+          ],
+        ),
       ),
     );
   }

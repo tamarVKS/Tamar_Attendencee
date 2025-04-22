@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -13,278 +17,340 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   String? _selectedLeaveType;
-  int totalLeave = 24;
-  int availableLeave = 24;
+  int totalLeave = 24; // Total leave days
+  int availableLeave = 24; // Leave remaining
+  bool isSubmitting = false;
+  String? _documentUrl; // Variable to hold the uploaded document URL
 
   void _showLeaveRequestDialog() {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
+      isScrollControlled: true,
       backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
+        return Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Request Leave', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 16),
-
-                  // Start Date & End Date in One Line
+                  Text("New Leave Request", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFFFB200))),
+                  SizedBox(height: 20),
                   Row(
                     children: [
-                      // Start Date Picker
                       Expanded(
-                        child: InkWell(
+                        child: _buildDatePickerTile(
+                          title: 'Start Date',
+                          date: _startDate,
                           onTap: () async {
-                            DateTime? pickedDate = await showDatePicker(
+                            DateTime? picked = await showDatePicker(
                               context: context,
                               initialDate: DateTime.now(),
                               firstDate: DateTime.now(),
                               lastDate: DateTime(2100),
                             );
-                            if (pickedDate != null) {
+                            if (picked != null) {
                               setState(() {
-                                _startDate = pickedDate;
-                                _endDate = null; // Reset end date
+                                _startDate = picked;
+                                _endDate = null;
                               });
                             }
                           },
-                          child: Container(
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  _startDate == null ? 'Start Date' : DateFormat('yyyy-MM-dd').format(_startDate!),
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                                Icon(Icons.calendar_today, color: Colors.blueAccent),
-                              ],
-                            ),
-                          ),
                         ),
                       ),
                       SizedBox(width: 10),
-
-                      // End Date Picker
                       Expanded(
-                        child: InkWell(
+                        child: _buildDatePickerTile(
+                          title: 'End Date',
+                          date: _endDate,
                           onTap: _startDate == null
                               ? null
                               : () async {
-                            DateTime? pickedDate = await showDatePicker(
+                            DateTime? picked = await showDatePicker(
                               context: context,
                               initialDate: _startDate!,
                               firstDate: _startDate!,
                               lastDate: DateTime(2100),
                             );
-                            if (pickedDate != null) {
+                            if (picked != null) {
                               setState(() {
-                                _endDate = pickedDate;
+                                _endDate = picked;
                               });
                             }
                           },
-                          child: Container(
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  _endDate == null ? 'End Date' : DateFormat('yyyy-MM-dd').format(_endDate!),
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                                Icon(Icons.calendar_today, color: Colors.blueAccent),
-                              ],
-                            ),
-                          ),
                         ),
                       ),
                     ],
                   ),
-
-                  SizedBox(height: 10),
-
-                  // Leave Type Dropdown
-                  DropdownButtonFormField<String>(
+                  SizedBox(height: 15),
+                  DropdownButtonFormField2<String>(
                     value: _selectedLeaveType,
-                    hint: Text('Select Leave Type'),
-                    items: ['Sick Leave', 'Casual Leave', 'Medical Leave']
-                        .map((leaveType) => DropdownMenuItem(value: leaveType, child: Text(leaveType)))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedLeaveType = value;
-                      });
-                    },
+                    isExpanded: true,
                     decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      labelText: 'Leave Type',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 14),
                     ),
-                  ),
-
-                  SizedBox(height: 20),
-
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    buttonStyleData: ButtonStyleData(
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    dropdownStyleData: DropdownStyleData(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        color: Colors.white,
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 14, horizontal: 24),
                     ),
-                    onPressed: _submitLeaveRequest,
-                    child: Text('Submit Request', style: TextStyle(fontSize: 18, color: Colors.white)),
+                    items: ['Sick Leave', 'Casual Leave', 'Medical Leave']
+                        .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                        .toList(),
+                    onChanged: (value) => setState(() => _selectedLeaveType = value),
+                    hint: Text("Select leave type", style: TextStyle(color: Colors.grey)),
+                  ),
+                  SizedBox(height: 15),
+                  if (_selectedLeaveType == 'Medical Leave') ...[
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.attach_file),
+                      label: Text('Upload Medical Certificate'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: _pickFile,
+                    ),
+                    if (_documentUrl != null)
+                      Text(
+                        'Document Uploaded: ${_documentUrl!.split('/').last}',
+                        style: TextStyle(color: Colors.green, fontSize: 14),
+                      ),
+                  ],
+                  SizedBox(height: 20),
+                  AnimatedSwitcher(
+                    duration: Duration(milliseconds: 300),
+                    child: isSubmitting
+                        ? CircularProgressIndicator()
+                        : ElevatedButton.icon(
+                      key: ValueKey("submitButton"),
+                      icon: Icon(Icons.send),
+                      label: Text('Submit Request'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFFFB200),
+                        padding: EdgeInsets.symmetric(vertical: 14, horizontal: 30),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () => _submitLeaveRequest(setState),
+                    ),
                   ),
                 ],
-              ),
-            );
-          },
+              );
+            },
+          ),
         );
       },
     );
   }
 
-
-  void _submitLeaveRequest() async {
-    if (_startDate == null || _endDate == null || _selectedLeaveType == null) return;
-
-    int leaveDays = _endDate!.difference(_startDate!).inDays + 1;
-    if (leaveDays > availableLeave) return;
-
-    final leaveId = Uuid().v4(); // Generate unique ID
-
-    await FirebaseFirestore.instance.collection('leave_requests').doc(leaveId).set({
-      'id': leaveId,
-      'employeeId': 'employee_123', // Replace with actual employee ID
-      'type': _selectedLeaveType!,
-      'startDate': Timestamp.fromDate(_startDate!),
-      'endDate': Timestamp.fromDate(_endDate!),
-      'days': leaveDays,
-      'status': 'Pending',
-    });
-
-    setState(() {
-      availableLeave -= leaveDays;
-    });
-
-    _startDate = null;
-    _endDate = null;
-    _selectedLeaveType = null;
-    Navigator.pop(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Leave Management'),
-        backgroundColor: Colors.blueAccent,
-        actions: [
-          IconButton(icon: Icon(Icons.add), onPressed: _showLeaveRequestDialog),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildDatePickerTile({
+    required String title,
+    required DateTime? date,
+    required VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade400),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                LeaveCard(color: Colors.brown, title: 'Total Leave', count: totalLeave),
-                LeaveCard(color: Colors.teal, title: 'Available Leave', count: availableLeave),
-              ],
+            Text(
+              date == null ? title : DateFormat('yyyy-MM-dd').format(date),
+              style: TextStyle(fontSize: 16, color: date == null ? Colors.grey : Colors.black),
             ),
-            SizedBox(height: 20),
-            Center(child: Text('Leave Request History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-            SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                itemCount: leaveRequests.length,
-                itemBuilder: (context, index) {
-                  return LeaveRequestCard(
-                    dateRange: leaveRequests[index]['dateRange']!,
-                    type: leaveRequests[index]['type']!,
-                    status: leaveRequests[index]['status']!,
-                    days: leaveRequests[index]['days']!,
-                  );
-                },
-              ),
-            ),
+            Icon(Icons.calendar_today, color: Color(0xFFFFB200)),
           ],
         ),
       ),
     );
   }
-}
-class LeaveCard extends StatelessWidget {
-  final Color color;
-  final String title;
-  final int count;
 
-  LeaveCard({required this.color, required this.title, required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: MediaQuery.of(context).size.width * 0.4,
-      padding: EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$count',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          SizedBox(height: 8.0),
-          Text(
-            title,
-            style: TextStyle(fontSize: 16, color: Colors.white),
-          ),
-        ],
-      ),
-    );
+  void _pickFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      File file = File(result.files.single.path!);
+      _uploadFile(file);
+    }
   }
-}
 
-class LeaveRequestCard extends StatelessWidget {
-  final String dateRange;
-  final String type;
-  final String status;
-  final String days;
+  void _uploadFile(File file) async {
+    try {
+      // Create a unique file name using Uuid
+      String fileName = Uuid().v4();
+      Reference storageRef = FirebaseStorage.instance.ref().child('medical_certificates/$fileName');
 
-  LeaveRequestCard({required this.dateRange, required this.type, required this.status, required this.days});
+      // Upload file to Firebase Storage
+      UploadTask uploadTask = storageRef.putFile(file);
+      TaskSnapshot snapshot = await uploadTask;
+
+      // Get the file URL after upload is completed
+      String fileUrl = await snapshot.ref.getDownloadURL();
+
+      // Update the UI with the file URL
+      setState(() {
+        _documentUrl = fileUrl;
+      });
+    } catch (e) {
+      print("Error uploading file: $e");
+    }
+  }
+
+  void _submitLeaveRequest(StateSetter modalSetState) async {
+    if (_startDate == null || _endDate == null || _selectedLeaveType == null) return;
+
+    int leaveDays = _endDate!.difference(_startDate!).inDays + 1;
+    if (leaveDays > availableLeave) return;
+
+    modalSetState(() => isSubmitting = true);
+
+    final leaveId = Uuid().v4();
+    final formattedDateRange = "${DateFormat('yyyy-MM-dd').format(_startDate!)} to ${DateFormat('yyyy-MM-dd').format(_endDate!)}";
+
+    // Save the leave request to Firestore
+    await FirebaseFirestore.instance.collection('leave_requests').doc(leaveId).set({
+      'id': leaveId,
+      'employeeId': 'employee_123',
+      'type': _selectedLeaveType!,
+      'startDate': Timestamp.fromDate(_startDate!),
+      'endDate': Timestamp.fromDate(_endDate!),
+      'days': leaveDays,
+      'status': 'Pending',
+      'documentUrl': _documentUrl, // Store the document URL
+    });
+
+    await Future.delayed(Duration(milliseconds: 500));
+
+    setState(() {
+      availableLeave -= leaveDays;
+
+      int centerIndex = (leaveRequests.length / 2).floor();
+      leaveRequests.insert(centerIndex, {
+        'dateRange': formattedDateRange,
+        'type': _selectedLeaveType!,
+        'status': 'Pending',
+        'days': leaveDays.toString(),
+        'documentUrl': _documentUrl ?? 'No document uploaded', // Add document info
+      });
+    });
+
+    modalSetState(() {
+      isSubmitting = false;
+    });
+
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Scaffold(
+      backgroundColor: Color(0xFF001F3F),
+      appBar: AppBar(
+        title: Text('Leave Management', style: TextStyle(color: Colors.white)),
+        backgroundColor: Color(0xFF003459),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('$dateRange - $type', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8.0),
-            Text('Days: $days', style: TextStyle(fontSize: 14, color: Colors.grey)),
-            Text('Status: $status', style: TextStyle(fontSize: 14, color: Colors.grey)),
+            SizedBox(height: screenHeight * 0.02),
+            // Leave balance box
+            Container(
+              padding: EdgeInsets.all(20),
+              margin: EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Color(0xFF003459),
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Total Leave',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                      Text(
+                        '$totalLeave days',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Available Leave',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                      Text(
+                        '$availableLeave days',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Request leave button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFFFB200),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: _showLeaveRequestDialog,
+              child: Text('Request Leave'),
+            ),
+            SizedBox(height: screenHeight * 0.03),
+            Expanded(
+              child: ListView.builder(
+                itemCount: leaveRequests.length,
+                itemBuilder: (context, index) {
+                  final leaveRequest = leaveRequests[index];
+                  return Card(
+                    color: Colors.white,
+                    margin: EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: ListTile(
+                      title: Text(
+                        leaveRequest['dateRange']!,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text('${leaveRequest['type']} | ${leaveRequest['days']} days'),
+                      trailing: Chip(
+                        label: Text(
+                          leaveRequest['status']!,
+                          style: TextStyle(color: leaveRequest['status'] == 'Pending' ? Colors.orange : Colors.green),
+                        ),
+                        backgroundColor: Colors.transparent,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),

@@ -9,10 +9,10 @@ import 'clockinout.dart';
 import 'leavepage.dart';
 import 'notification_page.dart';
 import 'dart:async';
+import 'package:slide_to_act/slide_to_act.dart';
 
 class DashboardScreen extends StatefulWidget {
   final String userId;
-
   DashboardScreen({required this.userId});
 
   @override
@@ -53,7 +53,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
     } catch (e) {
-      print('Error fetching user data: $e');
+      print('Error fetching user data: \$e');
       setState(() {
         _userName = 'User';
         _userRole = 'user';
@@ -80,10 +80,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _navigateToNotifications() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => NotificationsScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     if (_isLoading) {
       return Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -93,51 +98,68 @@ class _DashboardScreenState extends State<DashboardScreen> {
     List<Widget> _widgetOptions = <Widget>[
       DashboardContent(userName: _userName!),
       AttendanceHistoryScreen(),
+      LeaveManagementScreen(),
       ProfilePage(),
     ];
 
     return MaterialApp(
-      themeMode: ThemeMode.system,
-      darkTheme: ThemeData.dark(),
-      theme: ThemeData.light(),
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: isDarkMode ? Colors.black : Colors.grey[100],
+        backgroundColor: Color(0xFF001F3F),
         appBar: _selectedIndex == 0
             ? AppBar(
-          title: Text('Dashboard'),
-          backgroundColor: Colors.blueAccent,
+          title: Text('Dashboard', style: TextStyle(color: Colors.white)),
+          backgroundColor: Color(0xFF003459),
           centerTitle: true,
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              bottom: Radius.circular(0),
-            ),
-          ),
-          actions: _userRole == 'admin'
-              ? [
+          actions: [
             IconButton(
-              icon: Icon(Icons.admin_panel_settings_outlined),
-              tooltip: 'Admin Panel',
-              onPressed: _navigateToAdmin,
+              icon: Icon(Icons.notifications),
+              tooltip: 'Notifications',
+              onPressed: _navigateToNotifications,
+              color: Color(0xFFFFB200),
             ),
-          ]
-              : null,
+            if (_userRole == 'admin')
+              IconButton(
+                icon: Icon(Icons.admin_panel_settings_outlined),
+                tooltip: 'Admin Panel',
+                onPressed: _navigateToAdmin,
+                color: Color(0xFFFFB200),
+              ),
+          ],
         )
             : null,
         body: AnimatedSwitcher(
           duration: Duration(milliseconds: 300),
           child: _widgetOptions[_selectedIndex],
         ),
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.blueAccent,
-          unselectedItemColor: Colors.grey,
-          onTap: _onItemTapped,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF003459), Color(0xFF001F3F)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: BottomNavigationBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            type: BottomNavigationBarType.fixed,
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+              BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+              BottomNavigationBarItem(icon: Icon(Icons.beach_access), label: 'Leave'),
+              BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+            ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: Color(0xFFFFB200),
+            unselectedItemColor: Colors.white60,
+            onTap: _onItemTapped,
+          ),
         ),
       ),
     );
@@ -146,7 +168,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 class DashboardContent extends StatefulWidget {
   final String userName;
-
   DashboardContent({required this.userName});
 
   @override
@@ -160,7 +181,7 @@ class _DashboardContentState extends State<DashboardContent> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(Duration(seconds: 1), (Timer t) => _updateTime());
+    _timer = Timer.periodic(Duration(seconds: 1), (_) => _updateTime());
   }
 
   void _updateTime() {
@@ -199,7 +220,7 @@ class _DashboardContentState extends State<DashboardContent> {
           padding: EdgeInsets.symmetric(vertical: 30, horizontal: 20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.blueAccent, Colors.lightBlueAccent],
+              colors: [Color(0xFF006778), Color(0xFF003459)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -233,13 +254,9 @@ class _DashboardContentState extends State<DashboardContent> {
                       ),
                     ),
                     SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Text(
-                          '📅 ${getCurrentDate()}   🕒 $_time',
-                          style: TextStyle(fontSize: 14, color: Colors.white70),
-                        ),
-                      ],
+                    Text(
+                      '📅 ${getCurrentDate()}   🕒 $_time',
+                      style: TextStyle(fontSize: 14, color: Colors.white70),
                     ),
                   ],
                 ),
@@ -258,26 +275,11 @@ class _DashboardContentState extends State<DashboardContent> {
               childAspectRatio: 1.0,
               children: [
                 _buildGridCard(
-                    label: 'Attendance',
-                    icon: Icons.access_time,
-                    context: context,
-                    destination: ReportAttendanceScreen()),
-                _buildGridCard(
-                    label: 'Notification',
-                    icon: Icons.notifications_active,
-                    context: context,
-                    destination: NotificationsScreen()),
-                _buildGridCard(
-                    label: 'Leave',
-                    icon: Icons.beach_access,
-                    context: context,
-                    destination: LeaveManagementScreen()),
-                _buildGridCard(
-                    label: 'Check In/Out',
-                    icon: Icons.check_circle_outline,
-                    context: context,
-                    destination:
-                    LiveAttendanceScreen(employeeName: widget.userName)),
+                  label: 'Check In/Out',
+                  icon: Icons.check_circle_outline,
+                  context: context,
+                  destination: LiveAttendanceScreen(employeeName: widget.userName),
+                ),
               ],
             ),
           ),
@@ -295,7 +297,8 @@ class _DashboardContentState extends State<DashboardContent> {
     return Card(
       elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      shadowColor: Colors.black12,
+      color: Colors.white,
+      shadowColor: Colors.black26,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
@@ -303,27 +306,27 @@ class _DashboardContentState extends State<DashboardContent> {
             context,
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) => destination,
-              transitionsBuilder:
-                  (context, animation, secondaryAnimation, child) {
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return FadeTransition(opacity: animation, child: child);
               },
             ),
           );
         },
-        splashColor: Colors.blueAccent.withOpacity(0.3),
+        splashColor: Color(0xFFFFB200).withOpacity(0.3),
         child: Padding(
           padding: EdgeInsets.all(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 38, color: Colors.blueAccent),
+              Icon(icon, size: 38, color: Color(0xFFFFB200)),
               SizedBox(height: 14),
               Text(
                 label,
                 style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[800]),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
               ),
             ],
           ),

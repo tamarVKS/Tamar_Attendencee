@@ -49,6 +49,25 @@ dependencies:
   path_provider: ^2.1.5
   permission_handler: ^11.4.0
   shared_preferences: ^2.5.3
+  slide_to_act: ^2.0.2
+  printing: ^5.14.2
+  wave: ^0.2.2
+  table_calendar: ^3.2.0
+  animations: ^2.0.11
+  syncfusion_flutter_xlsio: ^29.1.37
+  http: ^1.3.0
+  flutter_secure_storage: ^9.2.4
+  local_auth: ^2.3.0
+  google_fonts: ^6.2.1
+  fl_chart: ^0.71.0
+  font_awesome_flutter: ^10.8.0
+  url_launcher: ^6.3.1
+  csv: ^6.0.0
+  excel: ^4.0.6
+  dropdown_button2: ^2.3.9
+  open_file: ^3.5.10
+  file_picker: ^10.1.2
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -58,9 +77,9 @@ dev_dependencies:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/TSicon.png"
+  image_path: "assets/tamar_logo.png"
   adaptive_icon_background: "#ffffff"  # Background for adaptive icons (Android)
-  adaptive_icon_foreground: "assets/TSicon.png"  # Foreground for adaptive icons
+  adaptive_icon_foreground: "assets/tamar_logo.png"  # Foreground for adaptive icons
 
 
 

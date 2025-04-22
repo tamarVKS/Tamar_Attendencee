@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -19,9 +20,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (newPass.isEmpty || confirmPass.isEmpty) {
       _showMessage("Please fill in all fields!");
     } else if (newPass.length < 6) {
-      _showMessage("New password must be at least 6 characters long!");
+      _showMessage("Password must be at least 6 characters!");
     } else if (newPass != confirmPass) {
-      _showMessage("New password and confirm password do not match!");
+      _showMessage("Passwords do not match!");
     } else {
       _showMessage("Password changed successfully!");
     }
@@ -36,88 +37,132 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      appBar: AppBar(
-        backgroundColor: Colors.blueAccent,
-        title: Text("Change Password"),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(height: 50), // Moves the container slightly higher
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.0),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  elevation: 5,
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          "Update Password",
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blueAccent),
-                        ),
-                        SizedBox(height: 20),
-
-                        _buildPasswordField("New Password", _newPasswordController, _newPasswordVisible, () {
-                          setState(() {
-                            _newPasswordVisible = !_newPasswordVisible;
-                          });
-                        }),
-
-                        SizedBox(height: 15),
-
-                        _buildPasswordField("Confirm New Password", _confirmPasswordController, _confirmPasswordVisible, () {
-                          setState(() {
-                            _confirmPasswordVisible = !_confirmPasswordVisible;
-                          });
-                        }),
-
-                        SizedBox(height: 25),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: _changePassword,
-                          child: Text("Change Password", style: TextStyle(fontSize: 18, color: Colors.white)),
-                        ),
-                      ],
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  const Text(
+                    "Change Password",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 1.2,
                     ),
                   ),
-                ),
+                  const SizedBox(height: 30),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(25),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(25),
+                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.25),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            _buildPasswordField(
+                              label: "New Password",
+                              controller: _newPasswordController,
+                              isVisible: _newPasswordVisible,
+                              toggleVisibility: () => setState(() {
+                                _newPasswordVisible = !_newPasswordVisible;
+                              }),
+                            ),
+                            const SizedBox(height: 20),
+                            _buildPasswordField(
+                              label: "Confirm Password",
+                              controller: _confirmPasswordController,
+                              isVisible: _confirmPasswordVisible,
+                              toggleVisibility: () => setState(() {
+                                _confirmPasswordVisible = !_confirmPasswordVisible;
+                              }),
+                            ),
+                            const SizedBox(height: 30),
+                            ElevatedButton(
+                              onPressed: _changePassword,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E90FF),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                elevation: 6,
+                              ),
+                              child: const Text(
+                                "Change Password",
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPasswordField(String label, TextEditingController controller, bool isVisible, VoidCallback toggleVisibility) {
+  Widget _buildPasswordField({
+    required String label,
+    required TextEditingController controller,
+    required bool isVisible,
+    required VoidCallback toggleVisibility,
+  }) {
     return TextFormField(
       controller: controller,
       obscureText: !isVisible,
+      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(Icons.lock, color: Colors.blueAccent),
-        suffixIcon: IconButton(
-          icon: Icon(isVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
-          onPressed: toggleVisibility,
+        labelStyle: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w500),
+        prefixIcon: const Icon(Icons.lock_outline, color: Colors.white60),
+        suffixIcon: GestureDetector(
+          onTap: toggleVisibility,
+          child: Icon(
+            isVisible ? Icons.visibility : Icons.visibility_off,
+            color: Colors.white60,
+          ),
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Colors.white.withOpacity(0.05),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Colors.white30),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Colors.white),
+        ),
       ),
     );
   }
