@@ -11,7 +11,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final TextEditingController _confirmPasswordController = TextEditingController();
 
   bool _newPasswordVisible = false;
-  bool _confirmPasswordVisible = false;
+  bool _confirmPasswordVisible =  false;
 
   void _changePassword() {
     String newPass = _newPasswordController.text.trim();
@@ -53,6 +53,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
+                  // Glowing Lock Icon
+                  Icon(
+                    Icons.lock_reset,
+                    size: 80,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        color: Colors.blueAccent.withOpacity(0.6),
+                        blurRadius: 20,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
                   const Text(
                     "Change Password",
                     style: TextStyle(
@@ -77,7 +91,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             BoxShadow(
                               color: Colors.black.withOpacity(0.25),
                               blurRadius: 10,
-                              offset: Offset(0, 4),
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),

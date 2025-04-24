@@ -21,7 +21,6 @@ class _EmployeeFormState extends State<EmployeeForm> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // ✅ Pick Image
   Future<void> _pickImage() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -31,7 +30,6 @@ class _EmployeeFormState extends State<EmployeeForm> {
     }
   }
 
-  // ✅ Upload Image to Firebase Storage
   Future<void> _uploadImage(File image) async {
     try {
       String fileName = 'employees/${DateTime.now().millisecondsSinceEpoch}.jpg';
@@ -40,32 +38,36 @@ class _EmployeeFormState extends State<EmployeeForm> {
       TaskSnapshot snapshot = await uploadTask;
       String uploadedUrl = await snapshot.ref.getDownloadURL();
       setState(() {
-        _imageUrl = uploadedUrl; // ✅ Set new image URL after upload
+        _imageUrl = uploadedUrl;
       });
     } catch (e) {
       print('⚠️ Image upload failed: $e');
-      // ✅ If upload fails, keep the default image
     }
   }
 
-  // ✅ Save Employee Data in Firestore
   Future<void> _saveEmployeeData() async {
-    if (_formKey.currentState!.validate()) {
-      if (_password != _retypePassword) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Passwords do not match.")));
-        return;
+    if (_formKey.currentState == null || !_formKey.currentState!.validate()) return;
+
+    if (_password != _retypePassword) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Passwords do not match.")));
+      return;
+    }
+
+    _formKey.currentState!.save();
+
+    try {
+      if (_image != null) {
+        await _uploadImage(_image!);
       }
 
-      _formKey.currentState!.save();
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
 
-      try {
-        UserCredential userCredential = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
-
-        // ✅ If no uploaded image, use the hardcoded default
+      if (userCredential.user != null) {
+        String uid = userCredential.user!.uid;
         String finalImageUrl = _imageUrl.isNotEmpty ? _imageUrl : 'assets/default_image.jpg';
 
-        await _firestore.collection('employees').doc(userCredential.user!.uid).set({
-          'uid': userCredential.user!.uid,
+        Map<String, dynamic> employeeData = {
+          'uid': uid,
           'name': _name,
           'email': _email,
           'phone': _phone,
@@ -73,6 +75,17 @@ class _EmployeeFormState extends State<EmployeeForm> {
           'jobTitle': _jobTitle,
           'imageUrl': finalImageUrl,
           'createdAt': Timestamp.now(),
+        };
+
+        await _firestore.collection('employees').doc(uid).set(employeeData);
+        await _firestore.collection('ProfileInformation').doc(uid).set({
+          'uid': uid,
+          'name': _name,
+          'email': _email,
+          'phone': _phone,
+          'department': _department,
+          'jobTitle': _jobTitle,
+          'profileImage': finalImageUrl,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("✅ Employee added successfully!")));
@@ -80,14 +93,15 @@ class _EmployeeFormState extends State<EmployeeForm> {
         _formKey.currentState!.reset();
         setState(() {
           _image = null;
-          _imageUrl = 'assets/default_image.jpg'; // ✅ Reset to default image
+          _imageUrl = 'assets/default_image.jpg';
           _name = _email = _phone = _department = _jobTitle = _password = _retypePassword = '';
         });
-
-      } catch (e) {
-        print('⚠️ Error saving employee: $e');
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Failed to add employee: $e")));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Failed to retrieve user ID.")));
       }
+    } catch (e) {
+      print('⚠️ Error saving employee: $e');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Failed to add employee: $e")));
     }
   }
 
@@ -108,20 +122,20 @@ class _EmployeeFormState extends State<EmployeeForm> {
                   backgroundColor: Colors.grey[300],
                   backgroundImage: _image != null
                       ? FileImage(_image!) as ImageProvider
-                      : NetworkImage(_imageUrl), // ✅ Always use a valid image URL
+                      : (_imageUrl.startsWith('http') ? NetworkImage(_imageUrl) : AssetImage(_imageUrl)) as ImageProvider,
                   child: _image == null ? Icon(Icons.camera_alt, size: 30, color: Colors.white) : null,
                 ),
               ),
               SizedBox(height: 20),
-              buildTextField('Name', Icons.person, (value) => _name = value!),
-              buildTextField('Email', Icons.email, (value) => _email = value!),
-              buildTextField('Phone', Icons.phone, (value) => _phone = value!),
-              buildDropdown('Department', ['HR', 'Engineering', 'Sales', 'Marketing'], (newValue) => _department = newValue!),
-              buildDropdown('Job Title', ['Manager', 'Developer', 'Designer', 'Analyst'], (newValue) => _jobTitle = newValue!),
-              buildPasswordField('Password', Icons.lock, (value) => _password = value!, obscureText: _obscurePassword, toggleVisibility: () {
+              buildTextField('Name', Icons.person, (value) => _name = value ?? ''),
+              buildTextField('Email', Icons.email, (value) => _email = value ?? ''),
+              buildTextField('Phone', Icons.phone, (value) => _phone = value ?? ''),
+              buildDropdown('Department', ['HR', 'Engineering', 'Sales', 'Marketing'], (newValue) => _department = newValue ?? ''),
+              buildDropdown('Job Title', ['Manager', 'Developer', 'Designer', 'Analyst'], (newValue) => _jobTitle = newValue ?? ''),
+              buildPasswordField('Password', Icons.lock, (value) => _password = value ?? '', obscureText: _obscurePassword, toggleVisibility: () {
                 setState(() => _obscurePassword = !_obscurePassword);
               }),
-              buildPasswordField('Retype Password', Icons.lock, (value) => _retypePassword = value!, obscureText: _obscureRetypePassword, toggleVisibility: () {
+              buildPasswordField('Retype Password', Icons.lock, (value) => _retypePassword = value ?? '', obscureText: _obscureRetypePassword, toggleVisibility: () {
                 setState(() => _obscureRetypePassword = !_obscureRetypePassword);
               }),
               SizedBox(height: 20),
@@ -141,19 +155,17 @@ class _EmployeeFormState extends State<EmployeeForm> {
     );
   }
 
-  // ✅ Helper Method: Standard Text Field
   Widget buildTextField(String label, IconData icon, Function(String?) onSave) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon), border: OutlineInputBorder()),
-        validator: (value) => value!.isEmpty ? 'Please enter $label' : null,
+        validator: (value) => (value == null || value.isEmpty) ? 'Please enter $label' : null,
         onSaved: onSave,
       ),
     );
   }
 
-  // ✅ Helper Method: Dropdown Field
   Widget buildDropdown(String label, List<String> options, Function(String?) onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -161,12 +173,11 @@ class _EmployeeFormState extends State<EmployeeForm> {
         decoration: InputDecoration(labelText: label, prefixIcon: Icon(Icons.arrow_drop_down), border: OutlineInputBorder()),
         items: options.map((option) => DropdownMenuItem(value: option, child: Text(option))).toList(),
         onChanged: onChanged,
-        validator: (value) => value == null ? 'Please select $label' : null,
+        validator: (value) => value == null || value.isEmpty ? 'Please select $label' : null,
       ),
     );
   }
 
-  // ✅ Helper Method: Password Field
   Widget buildPasswordField(String label, IconData icon, Function(String?) onSave, {required bool obscureText, required VoidCallback toggleVisibility}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -178,7 +189,7 @@ class _EmployeeFormState extends State<EmployeeForm> {
           suffixIcon: IconButton(icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility), onPressed: toggleVisibility),
           border: OutlineInputBorder(),
         ),
-        validator: (value) => value!.length < 6 ? 'Password must be at least 6 characters' : null,
+        validator: (value) => (value == null || value.length < 6) ? 'Password must be at least 6 characters' : null,
         onSaved: onSave,
       ),
     );

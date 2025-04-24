@@ -124,7 +124,7 @@ class _AdminPageState extends State<AdminPage> {
                   radius: 26,
                   backgroundImage: _profileImageUrl != null
                       ? NetworkImage(_profileImageUrl!)
-                      : AssetImage('assets/images/profile.png') as ImageProvider,
+                      : AssetImage('assets/default-avatar.png') as ImageProvider,
                 ),
                 SizedBox(width: 14),
                 Expanded(
@@ -137,7 +137,7 @@ class _AdminPageState extends State<AdminPage> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        '$_fullName 👋',
+                        'Pradeep 👋',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,

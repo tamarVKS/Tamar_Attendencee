@@ -150,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             items: const <BottomNavigationBarItem>[
               BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
               BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-              BottomNavigationBarItem(icon: Icon(Icons.beach_access), label: 'Leave'),
+              BottomNavigationBarItem(icon: Icon(Icons.time_to_leave), label: 'Leave'),
               BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
             ],
             currentIndex: _selectedIndex,
@@ -231,7 +231,7 @@ class _DashboardContentState extends State<DashboardContent> {
             children: [
               CircleAvatar(
                 radius: 30,
-                backgroundImage: AssetImage('assets/images/default.png'),
+                backgroundImage: AssetImage('assets/default-avatar.png'),
               ),
               SizedBox(width: 16),
               Expanded(
