@@ -68,6 +68,10 @@ dependencies:
   open_file: ^3.5.10
   file_picker: ^10.1.2
   shimmer: ^3.0.0
+  flutter_timezone: ^4.1.0
+  timezone: ^0.10.0
+  google_maps_flutter: ^2.12.1
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:

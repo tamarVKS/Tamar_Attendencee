@@ -26,6 +26,7 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
   String? checkOutLocation;
   String? checkInId;
   bool isLate = false;
+  String? workedHours;
 
   @override
   void initState() {
@@ -41,17 +42,24 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
       var data = latestDoc.data() as Map<String, dynamic>;
 
       CheckInOutDetails details = CheckInOutDetails.fromJson(data);
+      DateTime? checkin = details.checkin?.toDate();
+      DateTime? checkout = details.checkout?.toDate();
 
       setState(() {
         isCheckedIn = details.checkout == null;
         checkInId = latestDoc.id;
-        checkInTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(details.checkin.toDate());
+        checkInTime = checkin != null ? DateFormat('hh:mm a').format(checkin) : null;
         checkInLocation = details.location ?? "Unknown";
-        checkOutTime = details.checkout != null
-            ? DateFormat('yyyy-MM-dd HH:mm:ss').format(details.checkout!.toDate())
-            : null;
+        checkOutTime = checkout != null ? DateFormat('hh:mm a').format(checkout) : null;
         checkOutLocation = details.checkoutLocation ?? "Unknown";
         isLate = details.isLate ?? false;
+
+        if (checkin != null && checkout != null) {
+          Duration duration = checkout.difference(checkin);
+          workedHours = _formatDuration(duration);
+        } else {
+          workedHours = null;
+        }
       });
     } else {
       setState(() {
@@ -62,8 +70,15 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
         checkOutLocation = null;
         checkInId = null;
         isLate = false;
+        workedHours = null;
       });
     }
+  }
+
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    return '${hours.toString().padLeft(2, '0')}h ${minutes.toString().padLeft(2, '0')}m';
   }
 
   Future<String?> _getCurrentLocation() async {
@@ -114,10 +129,11 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
     await _databaseService.addCheckInOutData(checkInData).then((docRef) {
       setState(() {
         checkInId = docRef.id;
-        checkInTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+        checkInTime = DateFormat('hh:mm a').format(now);
         checkInLocation = location;
         isCheckedIn = true;
         isLoading = false;
+        workedHours = null;
       });
     }).catchError((error) {
       print('Error adding check-in: $error');
@@ -148,11 +164,15 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
       Timestamp.fromDate(now),
       location,
     ).then((_) {
+      DateTime checkinTime = DateFormat('hh:mm a').parse(checkInTime!);
+      Duration duration = now.difference(checkinTime);
+
       setState(() {
-        checkOutTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+        checkOutTime = DateFormat('hh:mm a').format(now);
         checkOutLocation = location;
         isCheckedIn = false;
         isLoading = false;
+        workedHours = _formatDuration(duration);
       });
     }).catchError((error) {
       print('Error updating check-out: $error');
@@ -163,56 +183,191 @@ class _LiveAttendanceScreenState extends State<LiveAttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.blueAccent, title: const Text('Live Attendance')),
+      appBar: AppBar(
+        title: const Text('Attendance', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        backgroundColor: Color(0xFF003459),
+        iconTheme: IconThemeData(color: Colors.white),
+        elevation: 0,
+        centerTitle: true,
+      ),
+      backgroundColor: Color(0xFF001F3F),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildActionButton('CHECK IN', Icons.login, Colors.green, isCheckedIn ? null : clockIn, isLoading),
-                  _buildActionButton('CHECK OUT', Icons.logout, Colors.red, isCheckedIn ? clockOut : null, isLoading),
-                ],
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 30.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Expanded(
+                  child: _buildModernActionButton(
+                    text: 'Check In',
+                    icon: Icons.login,
+                    color: Colors.green.shade400,
+                    onPressed: isCheckedIn ? null : clockIn,
+                    isLoading: isLoading,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildModernActionButton(
+                    text: 'Check Out',
+                    icon: Icons.logout,
+                    color: Colors.red.shade400,
+                    onPressed: isCheckedIn ? clockOut : null,
+                    isLoading: isLoading,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 40),
+            Text(
+              'Today\'s Details',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(height: 20),
-              _buildInfoCard('Check-In Time', checkInTime, isLate ? Colors.red : Colors.black),
-              if (isLate)
-                const Text("Late Check-In", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-              _buildInfoCard('Check-In Location', checkInLocation),
-              _buildInfoCard('Check-Out Time', checkOutTime),
-              _buildInfoCard('Check-Out Location', checkOutLocation),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+            _buildModernInfoCard(
+              title: 'Check-In Time',
+              value: checkInTime,
+              icon: Icons.access_time_outlined,
+              valueColor: isLate ? Color(0xFFFFB200) : Colors.white,
+              isLate: isLate,
+            ),
+            const SizedBox(height: 12),
+            _buildModernInfoCard(
+              title: 'Check-In Location',
+              value: checkInLocation,
+              icon: Icons.location_on_outlined,
+              valueColor: Colors.white,
+            ),
+            const SizedBox(height: 12),
+            _buildModernInfoCard(
+              title: 'Check-Out Time',
+              value: checkOutTime,
+              icon: Icons.logout_outlined,
+              valueColor: Colors.white,
+            ),
+            const SizedBox(height: 12),
+            _buildModernInfoCard(
+              title: 'Check-Out Location',
+              value: checkOutLocation,
+              icon: Icons.location_on_outlined,
+              valueColor: Colors.white,
+            ),
+            const SizedBox(height: 12),
+            if (workedHours != null)
+              _buildModernInfoCard(
+                title: 'Worked Hours',
+                value: workedHours,
+                icon: Icons.timer_outlined,
+                valueColor: Colors.white,
+              ),
+          ],
         ),
       ),
     );
   }
-}
 
-Widget _buildActionButton(String text, IconData icon, Color color, VoidCallback? onPressed, bool isLoading) {
-  return ElevatedButton.icon(
-    onPressed: isLoading ? null : onPressed,
-    icon: isLoading
-        ? const SizedBox(
-      height: 16,
-      width: 16,
-      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-    )
-        : Icon(icon),
-    label: Text(text),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: onPressed == null ? Colors.grey : color,
-    ),
-  );
-}
+  Widget _buildModernActionButton({
+    required String text,
+    required IconData icon,
+    required Color color,
+    VoidCallback? onPressed,
+    required bool isLoading,
+  }) {
+    return ElevatedButton(
+      onPressed: isLoading ? null : onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: onPressed == null ? Colors.grey.shade700 : color,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+      ),
+      child: isLoading
+          ? const SizedBox(
+        height: 24,
+        width: 24,
+        child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white),
+      )
+          : Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-Widget _buildInfoCard(String title, String? value, [Color textColor = Colors.black]) {
-  return Card(
-    child: ListTile(
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
-      subtitle: Text(value ?? 'Not recorded yet', style: TextStyle(color: textColor)),
-    ),
-  );
+  Widget _buildModernInfoCard({
+    required String title,
+    required String? value,
+    required IconData icon,
+    required Color valueColor,
+    bool isLate = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Color(0xFF003459),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white70),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value ?? 'Not recorded yet',
+                  style: TextStyle(
+                    color: valueColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (isLate)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      "Late Check-In",
+                      style: TextStyle(color: Color(0xFFFFB200), fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -20,18 +20,13 @@ import 'package:tamar_attendence/profile.dart';
 import 'package:tamar_attendence/report_attendance.dart';
 import 'package:tamar_attendence/screen/splash.dart';
 import 'package:tamar_attendence/signup_page.dart';
-import 'package:tamar_attendence/leavepage.dart'; // ⬅️ updated leave page
+import 'package:tamar_attendence/leavepage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    print("✅ Firebase Initialized Successfully");
-  } catch (e) {
-    print("❌ Firebase Initialization Failed: $e");
-  }
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(MyApp());
 }
@@ -42,6 +37,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Tamar Attendance',
+      initialRoute: '/splash',
       theme: ThemeData(
         brightness: Brightness.light,
         primarySwatch: Colors.blue,
@@ -53,7 +49,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       themeMode: ThemeMode.system,
-      initialRoute: '/modal_leave_approval',
+      home: AuthGate(), // 👈 New logic for handling persistent login
       onGenerateRoute: (settings) {
         final args = settings.arguments as Map<String, dynamic>? ?? {};
 
@@ -104,6 +100,28 @@ class MyApp extends StatelessWidget {
             );
           default:
             return MaterialPageRoute(builder: (_) => LoginScreen());
+        }
+      },
+    );
+  }
+}
+
+/// This widget checks if a user is logged in and navigates accordingly
+class AuthGate extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Splashscreen(); // You can keep your animated splash here
+        } else if (snapshot.hasData) {
+          // If user is logged in, send to dashboard
+          final userId = snapshot.data!.uid;
+          return DashboardScreen(userId: userId);
+        } else {
+          // If not logged in, go to login
+          return LoginScreen();
         }
       },
     );

@@ -91,7 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFFFFB200))),
       );
     }
 
@@ -108,23 +108,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: Color(0xFF001F3F),
         appBar: _selectedIndex == 0
             ? AppBar(
-          title: Text('Dashboard', style: TextStyle(color: Colors.white)),
+          title: Text('Dashboard', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
           backgroundColor: Color(0xFF003459),
           centerTitle: true,
           elevation: 0,
           actions: [
             IconButton(
-              icon: Icon(Icons.notifications),
+              icon: Icon(Icons.notifications, color: Color(0xFFFFB200)),
               tooltip: 'Notifications',
               onPressed: _navigateToNotifications,
-              color: Color(0xFFFFB200),
             ),
             if (_userRole == 'admin')
               IconButton(
-                icon: Icon(Icons.admin_panel_settings_outlined),
+                icon: Icon(Icons.admin_panel_settings_outlined, color: Color(0xFFFFB200)),
                 tooltip: 'Admin Panel',
                 onPressed: _navigateToAdmin,
-                color: Color(0xFFFFB200),
               ),
           ],
         )
@@ -205,7 +203,7 @@ class _DashboardContentState extends State<DashboardContent> {
 
   String getCurrentDate() {
     final now = DateTime.now();
-    return DateFormat('dd MMM yyyy').format(now);
+    return DateFormat('dd MMM, yyyy').format(now);
   }
 
   @override
@@ -225,38 +223,38 @@ class _DashboardContentState extends State<DashboardContent> {
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(25),
-              bottomRight: Radius.circular(25),
+              bottomLeft: Radius.circular(30),
+              bottomRight: Radius.circular(30),
             ),
           ),
           child: Row(
             children: [
               CircleAvatar(
-                radius: 26,
+                radius: 30,
                 backgroundImage: AssetImage('assets/images/default.png'),
               ),
-              SizedBox(width: 14),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       '${getGreeting()},',
-                      style: TextStyle(fontSize: 22, color: Colors.white70),
+                      style: TextStyle(fontSize: 20, color: Colors.white70),
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: 4),
                     Text(
                       '${widget.userName} 👋',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 6),
+                    SizedBox(height: 8),
                     Text(
-                      '📅 ${getCurrentDate()}   🕒 $_time',
-                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                      '${getCurrentDate()}   |   $_time',
+                      style: TextStyle(fontSize: 15, color: Colors.white70),
                     ),
                   ],
                 ),
@@ -264,22 +262,25 @@ class _DashboardContentState extends State<DashboardContent> {
             ],
           ),
         ),
-        SizedBox(height: screenHeight * 0.03),
+        SizedBox(height: screenHeight * 0.04),
         Expanded(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
             child: GridView.count(
               crossAxisCount: 2,
-              crossAxisSpacing: screenWidth * 0.05,
-              mainAxisSpacing: screenHeight * 0.03,
-              childAspectRatio: 1.0,
+              crossAxisSpacing: screenWidth * 0.04,
+              mainAxisSpacing: screenHeight * 0.025,
+              childAspectRatio: 1.1,
               children: [
-                _buildGridCard(
+                _buildCircularCard(
                   label: 'Check In/Out',
-                  icon: Icons.check_circle_outline,
+                  icon: Icons.fingerprint,
                   context: context,
                   destination: LiveAttendanceScreen(employeeName: widget.userName),
+                  backgroundColor: Color(0xFF003459),
+                  iconColor: Color(0xFFFFB200),
                 ),
+                // Add other circular dashboard cards here
               ],
             ),
           ),
@@ -288,48 +289,54 @@ class _DashboardContentState extends State<DashboardContent> {
     );
   }
 
-  Widget _buildGridCard({
+  Widget _buildCircularCard({
     required String label,
     required IconData icon,
     required BuildContext context,
     required Widget destination,
+    Color backgroundColor = Colors.white,
+    Color iconColor = Colors.black87,
   }) {
-    return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: Colors.white,
-      shadowColor: Colors.black26,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => destination,
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-            ),
-          );
-        },
-        splashColor: Color(0xFFFFB200).withOpacity(0.3),
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 38, color: Color(0xFFFFB200)),
-              SizedBox(height: 14),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => destination,
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
           ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: backgroundColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 40, color: iconColor),
+            SizedBox(height: 10),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: iconColor,
+              ),
+            ),
+          ],
         ),
       ),
     );

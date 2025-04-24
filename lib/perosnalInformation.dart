@@ -140,10 +140,10 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF001F3F),
+      backgroundColor: const Color(0xFF001F3F),
       appBar: AppBar(
         title: const Text("Personal Information"),
-        backgroundColor: Color(0xFF003459),
+        backgroundColor: const Color(0xFF003459),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -173,7 +173,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                     if (_isAdmin)
                       GestureDetector(
                         onTap: _pickImage,
-                        child: CircleAvatar(
+                        child: const CircleAvatar(
                           radius: 20,
                           backgroundColor: Color(0xFFFFD700),
                           child: Icon(Icons.camera_alt, color: Colors.black),
@@ -188,7 +188,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                   ElevatedButton(
                     onPressed: _isSaving ? null : _saveUserData,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFFD700),
+                      backgroundColor: const Color(0xFFFFD700),
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 40),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
