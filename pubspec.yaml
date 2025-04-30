@@ -73,6 +73,20 @@ dependencies:
   google_maps_flutter: ^2.12.1
   flutter_animate: ^4.5.2
   lottie: ^3.3.0
+  cached_network_image: ^3.4.1
+  csslib: ^1.0.2
+  image_picker_android: ^0.8.12+23
+  image_picker_macos: ^0.2.1+2
+  image_picker_for_web: ^3.0.6
+  path_provider_android: ^2.2.17
+  shared_preferences_android: ^2.4.10
+  url_launcher_ios: ^6.3.3
+  url_launcher_android: ^6.3.16
+  video_player: ^2.9.5
+  video_player_android: ^2.8.2
+  video_player_avfoundation: ^2.7.1
+
+
 
 
 
