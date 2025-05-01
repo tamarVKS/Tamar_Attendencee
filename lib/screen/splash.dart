@@ -37,7 +37,7 @@ class _SplashscreenState extends State<Splashscreen>
     _controller.forward();
 
     // Navigate after delay
-    Timer(const Duration(seconds: 5), () {
+    Timer(const Duration(seconds: 3), () {
       Navigator.of(context).pushReplacementNamed('/login_screen');
     });
   }

@@ -211,7 +211,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         build: (context) => [
           pw.Center(
             child: pw.Text(
-              "MyCompany Attendance Report",
+              "Tamar Software Attendance Report",
               style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
             ),
           ),
@@ -244,7 +244,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       ),
     );
 
-    final fileName = 'MyCompany_AttendanceReport_${DateFormat('ddMMyyyy_HHmm').format(DateTime.now())}.pdf';
+    final fileName = 'TamarSoftware_AttendanceReport_${DateFormat('ddMMyyyy_HHmm').format(DateTime.now())}.pdf';
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
       name: fileName,
