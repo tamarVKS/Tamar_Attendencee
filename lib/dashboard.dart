@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:tamar_attendence/adminpages/admin.dart';
 import 'package:tamar_attendence/profile.dart';
 import 'package:tamar_attendence/report_attendance.dart';
+import 'package:marquee/marquee.dart';
 import 'attendance_history.dart';
 import 'clockinout.dart';
 import 'leavepage.dart';
@@ -467,13 +468,26 @@ class _DashboardContentState extends State<DashboardContent> {
               child: Icon(icon, size: 28, color: Color(0xFFFFB200)),
             ),
             SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
+            Container(
+              height: 20,
+              width: double.infinity,
+              child: Marquee(
+                text: title,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+                scrollAxis: Axis.horizontal,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                blankSpace: 20.0,
+                velocity: 20.0,
+                pauseAfterRound: Duration(seconds: 1),
+                startPadding: 10.0,
+                accelerationDuration: Duration(seconds: 1),
+                accelerationCurve: Curves.linear,
+                decelerationDuration: Duration(milliseconds: 500),
+                decelerationCurve: Curves.easeOut,
               ),
             ),
           ],
@@ -690,72 +704,73 @@ class _DashboardContentState extends State<DashboardContent> {
             padding: EdgeInsets.all(16),
             child: Column(
               children: [
-              GridView.count(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.2,
-              children: [
-                _buildStatsCard(
-                    'Worked Hours',
-                    '42.5h',
-                    Icons.timer_outlined,
-                    Colors.blue,
-                    '+3.5h overtime'
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.2,
+                  children: [
+                    _buildStatsCard(
+                        'Worked Hours',
+                        '42.5h',
+                        Icons.timer_outlined,
+                        Colors.blue,
+                        '+3.5h overtime'
+                    ),
+                    _buildStatsCard(
+                        'Leaves Left',
+                        '${12 - widget.pendingRequests}/12',
+                        Icons.beach_access_outlined,
+                        Colors.teal,
+                        '${widget.pendingRequests} pending'
+                    ),
+                    if (_showMoreStats) ...[
+                      _buildStatsCard(
+                          'This Month',
+                          '18d',
+                          Icons.calendar_view_month,
+                          Colors.purple,
+                          '2 days remaining'
+                      ),
+                      _buildStatsCard(
+                          'Upcoming Holidays',
+                          widget.upcomingHolidays.toString(),
+                          Icons.celebration,
+                          Colors.orange,
+                          'Next: New Year'
+                      ),
+                    ] else ...[
+                      _buildStatsCard(
+                          'Weekly Avg.',
+                          '8.2h',
+                          Icons.av_timer,
+                          Colors.green,
+                          '±0.5h variance'
+                      ),
+                      _buildStatsCard(
+                          'Late Arrivals',
+                          '2',
+                          Icons.warning_amber,
+                          Colors.red,
+                          'Last: 5 min late'
+                      ),
+                    ],
+                  ],
                 ),
-                _buildStatsCard(
-                    'Leaves Left',
-                    '${12 - widget.pendingRequests}/12',
-                    Icons.beach_access_outlined,
-                    Colors.teal,
-                    '${widget.pendingRequests} pending'
-                ),
-                if (_showMoreStats) ...[
-                  _buildStatsCard(
-                      'This Month',
-                      '18d',
-                      Icons.calendar_view_month,
-                      Colors.purple,
-                      '2 days remaining'
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _showMoreStats = !_showMoreStats;
+                    });
+                  },
+                  child: Text(
+                    _showMoreStats ? 'Show less stats' : 'Show more stats',
+                    style: TextStyle(color: Color(0xFFFFB200)),
                   ),
-                  _buildStatsCard(
-                      'Upcoming Holidays',
-                      widget.upcomingHolidays.toString(),
-                      Icons.celebration,
-                      Colors.orange,
-                      'Next: New Year'
-                  ),
-                ] else ...[
-                  _buildStatsCard(
-                      'Weekly Avg.',
-                      '8.2h',
-                      Icons.av_timer,
-                      Colors.green,
-                      '±0.5h variance'
-                  ),
-                  _buildStatsCard(
-                      'Late Arrivals',
-                      '2',
-                      Icons.warning_amber,
-                      Colors.red,
-                      'Last: 5 min late'
-                  ),
-                ],
+                )
               ],
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _showMoreStats = !_showMoreStats;
-                });
-              },
-              child: Text(
-                _showMoreStats ? 'Show less stats' : 'Show more stats',
-                style: TextStyle(color: Color(0xFFFFB200)),
-              ),
-            )],
             ),
           ),
 

@@ -22,6 +22,8 @@ import 'package:tamar_attendence/screen/splash.dart';
 import 'package:tamar_attendence/signup_page.dart';
 import 'package:tamar_attendence/leavepage.dart';
 
+import 'adminpages/Office_Settings.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -82,6 +84,8 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => AdminPage());
           case '/modal_employee_details':
             return MaterialPageRoute(builder: (_) => EmployeeScreen());
+          case 'Office_Settings':
+            return MaterialPageRoute(builder: (_) => OfficeSettingsPage());
           case '/modal_employee_form':
             return MaterialPageRoute(builder: (_) => EmployeeForm());
           case '/modal_Leave_approval':

@@ -17,10 +17,10 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   String? _selectedLeaveType;
-  int totalLeave = 24; // Total leave days
-  int availableLeave = 24; // Leave remaining
+  int totalLeave = 24;
+  int availableLeave = 24;
   bool isSubmitting = false;
-  String? _documentUrl; // Variable to hold the uploaded document URL
+  String? _documentUrl;
 
   void _showLeaveRequestDialog() {
     showModalBottomSheet(
@@ -120,9 +120,12 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
                       onPressed: _pickFile,
                     ),
                     if (_documentUrl != null)
-                      Text(
-                        'Document Uploaded: ${_documentUrl!.split('/').last}',
-                        style: TextStyle(color: Colors.green, fontSize: 14),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          'Document Uploaded: ${_documentUrl!.split('/').last}',
+                          style: TextStyle(color: Colors.green, fontSize: 14),
+                        ),
                       ),
                   ],
                   SizedBox(height: 20),
@@ -188,18 +191,12 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
 
   void _uploadFile(File file) async {
     try {
-      // Create a unique file name using Uuid
       String fileName = Uuid().v4();
       Reference storageRef = FirebaseStorage.instance.ref().child('medical_certificates/$fileName');
-
-      // Upload file to Firebase Storage
       UploadTask uploadTask = storageRef.putFile(file);
       TaskSnapshot snapshot = await uploadTask;
-
-      // Get the file URL after upload is completed
       String fileUrl = await snapshot.ref.getDownloadURL();
 
-      // Update the UI with the file URL
       setState(() {
         _documentUrl = fileUrl;
       });
@@ -219,7 +216,6 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
     final leaveId = Uuid().v4();
     final formattedDateRange = "${DateFormat('yyyy-MM-dd').format(_startDate!)} to ${DateFormat('yyyy-MM-dd').format(_endDate!)}";
 
-    // Save the leave request to Firestore
     await FirebaseFirestore.instance.collection('leave_requests').doc(leaveId).set({
       'id': leaveId,
       'employeeId': 'employee_123',
@@ -228,21 +224,20 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
       'endDate': Timestamp.fromDate(_endDate!),
       'days': leaveDays,
       'status': 'Pending',
-      'documentUrl': _documentUrl, // Store the document URL
+      'documentUrl': _documentUrl,
     });
 
     await Future.delayed(Duration(milliseconds: 500));
 
     setState(() {
       availableLeave -= leaveDays;
-
       int centerIndex = (leaveRequests.length / 2).floor();
       leaveRequests.insert(centerIndex, {
         'dateRange': formattedDateRange,
         'type': _selectedLeaveType!,
         'status': 'Pending',
         'days': leaveDays.toString(),
-        'documentUrl': _documentUrl ?? 'No document uploaded', // Add document info
+        'documentUrl': _documentUrl ?? 'No document uploaded',
       });
     });
 
@@ -271,7 +266,6 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
         child: Column(
           children: [
             SizedBox(height: screenHeight * 0.02),
-            // Leave balance box
             Container(
               padding: EdgeInsets.all(20),
               margin: EdgeInsets.only(bottom: 20),
@@ -285,36 +279,17 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Total Leave',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                      Text(
-                        '$totalLeave days',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Available Leave',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                      Text(
-                        '$availableLeave days',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Total Leave', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    Text('$totalLeave days', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  ]),
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Available Leave', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    Text('$availableLeave days', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  ]),
                 ],
               ),
             ),
-            // Request leave button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFFFFB200),
@@ -325,26 +300,35 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen> {
             ),
             SizedBox(height: screenHeight * 0.03),
             Expanded(
-              child: ListView.builder(
+              child: leaveRequests.isEmpty
+                  ? Center(child: Text('No leave requests yet.', style: TextStyle(color: Colors.white70)))
+                  : ListView.builder(
                 itemCount: leaveRequests.length,
                 itemBuilder: (context, index) {
-                  final leaveRequest = leaveRequests[index];
+                  final leave = leaveRequests[index];
                   return Card(
                     color: Colors.white,
                     margin: EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: ListTile(
-                      title: Text(
-                        leaveRequest['dateRange']!,
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text('${leaveRequest['type']} | ${leaveRequest['days']} days'),
-                      trailing: Chip(
-                        label: Text(
-                          leaveRequest['status']!,
-                          style: TextStyle(color: leaveRequest['status'] == 'Pending' ? Colors.orange : Colors.green),
-                        ),
-                        backgroundColor: Colors.transparent,
+                      leading: Icon(Icons.event_note, color: Color(0xFFFFB200)),
+                      title: Text('${leave['type']} - ${leave['dateRange']}'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Status: ${leave['status']}'),
+                          Text('Days: ${leave['days']}'),
+                          if (leave['documentUrl'] != null && leave['documentUrl'] != 'No document uploaded')
+                            GestureDetector(
+                              onTap: () {
+                                // Optionally open document link
+                              },
+                              child: Text(
+                                'View Document',
+                                style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   );
